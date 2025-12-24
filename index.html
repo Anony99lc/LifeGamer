@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamer Life Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-card">
+            <h2 class="auth-logo">GAMER LIFE</h2>
+            <div class="auth-form">
+                <div class="input-group">
+                    <label>Nome do Jogador</label>
+                    <input type="text" id="username-input" placeholder="Digite seu Nickname...">
+                </div>
+                <button id="login-btn" class="auth-btn">START GAME</button>
+            </div>
+            <p class="auth-footer">Transforme sua vida num RPG.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        
+        <aside class="sidebar">
+            <h2 class="logo" id="player-name">PLAYER 1</h2>
+            
+            <nav class="menu">
+                <a href="#" class="menu-item active"><i class="ph ph-squares-four"></i> Dashboard</a>
+                <a href="#" class="menu-item"><i class="ph ph-chart-line-up"></i> Estatísticas</a>
+                <a href="#" class="menu-item"><i class="ph ph-trophy"></i> Conquistas</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="reset-btn" class="action-btn warning">
+                    <i class="ph ph-arrow-counter-clockwise"></i> Nova Semana
+                </button>
+                <button id="logout-btn" class="action-btn danger">
+                    <i class="ph ph-sign-out"></i> Sair
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            
+            <header class="level-header">
+                <div class="level-info">
+                    <h1>Nível <span id="level-display">1</span></h1>
+                    <span id="xp-display">0 / 1000 XP</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: 0%"></div>
+                </div>
+            </header>
+
+            <section class="charts-area">
+                <div class="card chart-card">
+                    <h3>Produtividade Semanal</h3>
+                    <canvas id="productivityChart"></canvas>
+                </div>
+                <div class="card chart-card">
+                    <h3>Foco vs. Humor</h3>
+                    <canvas id="moodChart"></canvas>
+                </div>
+            </section>
+
+            <section class="habits-area">
+                <h3>Grade de Hábitos</h3>
+                <div class="card habits-container">
+                    <div class="habit-header">
+                        <div></div> <span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span>
+                    </div>
+
+                    <div class="habit-row">
+                        <span class="habit-name">Dieta Limpa</span>
+                        <div class="checks">
+                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="habit-row">
+                        <span class="habit-name">Leitura (10 pág)</span>
+                        <div class="checks">
+                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
+                        </div>
+                    </div>
+
+                    <div class="habit-row">
+                        <span class="habit-name">Dormir < 00h</span>
+                        <div class="checks">
+                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
+                        </div>
+                    </div>
+
+                    <div class="habit-row">
+                        <span class="habit-name">Cardio Pesado</span>
+                        <div class="checks">
+                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="habit-row">
+                        <span class="habit-name">4L de Água</span>
+                        <div class="checks">
+                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
