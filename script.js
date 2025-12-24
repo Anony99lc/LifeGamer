@@ -22,7 +22,7 @@ let gameState = { xp: 0, level: 1, checked: {} };
 // 1. SISTEMA DE LOGIN E CADASTRO
 // ==========================================
 
-// Alternar entre telas de login e cadastro (Correção aplicada aqui)
+// Alternar entre telas
 document.getElementById('link-to-register').addEventListener('click', () => {
     loginForm.classList.add('hidden');
     registerForm.classList.remove('hidden');
@@ -33,7 +33,7 @@ document.getElementById('link-to-login').addEventListener('click', () => {
     loginForm.classList.remove('hidden');
 });
 
-// Inicialização: Verifica sessão
+// Inicialização
 function initAuth() {
     const sessionUser = localStorage.getItem('gamer_session_user');
     if (sessionUser) {
@@ -50,10 +50,7 @@ document.getElementById('btn-register').addEventListener('click', () => {
     const pass = document.getElementById('reg-pass').value.trim();
 
     if (!user || !pass) return alert("Preencha todos os campos!");
-
-    if (localStorage.getItem(`user_data_${user}`)) {
-        return alert("Usuário já existe! Faça login.");
-    }
+    if (localStorage.getItem(`user_data_${user}`)) return alert("Usuário já existe!");
 
     const newUserData = {
         password: pass,
@@ -63,9 +60,7 @@ document.getElementById('btn-register').addEventListener('click', () => {
     };
 
     localStorage.setItem(`user_data_${user}`, JSON.stringify(newUserData));
-    alert("Conta criada! Faça login agora.");
-    
-    // Volta para login
+    alert("Conta criada! Faça login.");
     registerForm.classList.add('hidden');
     loginForm.classList.remove('hidden');
 });
@@ -76,11 +71,9 @@ document.getElementById('btn-login').addEventListener('click', () => {
     const pass = document.getElementById('login-pass').value.trim();
 
     const storedData = localStorage.getItem(`user_data_${user}`);
-    
     if (!storedData) return alert("Usuário não encontrado!");
 
     const userData = JSON.parse(storedData);
-
     if (userData.password === pass) {
         localStorage.setItem('gamer_session_user', user);
         startGame(user);
@@ -102,11 +95,8 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 function startGame(username) {
     currentUser = username;
     playerDisplay.innerText = username;
-    
-    // Efeito de saída
     authScreen.style.opacity = '0';
     setTimeout(() => authScreen.classList.add('hidden'), 500);
-
     loadGameData();
 }
 
@@ -131,16 +121,30 @@ function renderUI() {
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 
-    // Limpa estado visual anterior
-    checks.forEach(check => check.classList.remove('active'));
+    // --- LÓGICA DE DIA DA SEMANA ---
+    const date = new Date();
+    const jsDay = date.getDay(); // 0(Dom) a 6(Sáb)
+    // Converte para nossa tabela (0=Seg ... 6=Dom)
+    const todayIndex = (jsDay === 0) ? 6 : jsDay - 1;
+
+    // Limpa estado anterior
+    checks.forEach(check => check.classList.remove('active', 'locked'));
     
-    // Recria listeners (para evitar duplicação) e marca os ativos
+    // Recria listeners e aplica cadeados
     const newChecks = document.querySelectorAll('.check');
     newChecks.forEach((check, index) => {
-        // Clona o nó para remover listeners antigos
         const newCheck = check.cloneNode(true);
         check.parentNode.replaceChild(newCheck, check);
         
+        // Verifica a coluna (resto da divisão por 7)
+        const colIndex = index % 7;
+
+        // Se NÃO for hoje, trava!
+        if (colIndex !== todayIndex) {
+            newCheck.classList.add('locked');
+            newCheck.title = "Apenas o dia de hoje está liberado!";
+        }
+
         if (gameState.checked[index]) newCheck.classList.add('active');
         
         newCheck.addEventListener('click', () => toggleCheck(newCheck, index));
@@ -148,6 +152,12 @@ function renderUI() {
 }
 
 function toggleCheck(element, index) {
+    // Bloqueia clique no cadeado
+    if (element.classList.contains('locked')) {
+        alert("🔒 Hoje não é esse dia! Volte no dia certo.");
+        return;
+    }
+
     if (element.classList.contains('active')) {
         element.classList.remove('active');
         delete gameState.checked[index];
@@ -172,26 +182,20 @@ function updateXP(amount) {
 }
 
 document.getElementById('reset-btn').addEventListener('click', () => {
-    if(confirm("Iniciar nova semana?")) {
+    if(confirm("Começar nova semana?")) {
         gameState.checked = {};
         saveGameData();
-        // Recarregar UI forçando atualização
         loadGameData();
     }
 });
 
-// ==========================================
-// 3. PWA & VISUAL
-// ==========================================
-
-// Gráficos
+// PWA & Charts
 if(document.getElementById('productivityChart')) {
     new Chart(document.getElementById('productivityChart'), {
         type: 'line',
         data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [3,5,2,6,4,7,5], borderColor: '#ff2e4d', backgroundColor: 'rgba(255,46,77,0.1)', fill: true, tension: 0.4 }] },
         options: { plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'#27272a'}}} }
     });
-    
     new Chart(document.getElementById('moodChart'), {
         type: 'bar',
         data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [7,6,8,5,7,9,8], backgroundColor: '#27272a', hoverBackgroundColor: '#ff2e4d', borderRadius: 4 }] },
@@ -199,11 +203,8 @@ if(document.getElementById('productivityChart')) {
     });
 }
 
-// Service Worker (PWA)
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js');
-    });
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }
 
 // INICIAR
