@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gamer Life RPG</title>
+    
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff2e4d">
+    <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
@@ -23,7 +28,7 @@
                     <input type="password" id="login-pass" placeholder="Senha">
                 </div>
                 <button id="btn-login" class="auth-btn">ENTRAR</button>
-                <p class="switch-text">Não tem conta? <span onclick="toggleAuthMode()">Criar conta</span></p>
+                <p class="switch-text">Não tem conta? <span id="link-to-register">Criar conta</span></p>
             </div>
 
             <div id="register-form" class="auth-box hidden">
@@ -35,7 +40,7 @@
                     <input type="password" id="reg-pass" placeholder="Crie uma Senha">
                 </div>
                 <button id="btn-register" class="auth-btn outline">CADASTRAR</button>
-                <p class="switch-text">Já tem conta? <span onclick="toggleAuthMode()">Fazer Login</span></p>
+                <p class="switch-text">Já tem conta? <span id="link-to-login">Fazer Login</span></p>
             </div>
         </div>
     </div>
@@ -65,6 +70,7 @@
         </aside>
 
         <main class="main-content">
+            
             <header class="level-header">
                 <div class="level-info">
                     <h1>Nível <span id="level-display">1</span></h1>
@@ -81,7 +87,7 @@
                     <canvas id="productivityChart"></canvas>
                 </div>
                 <div class="card chart-card">
-                    <h3>Humor</h3>
+                    <h3>Humor Semanal</h3>
                     <canvas id="moodChart"></canvas>
                 </div>
             </section>
@@ -92,6 +98,7 @@
                     <div class="habit-header">
                         <div></div> <span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span>
                     </div>
+
                     <div class="habit-row">
                         <span class="habit-name">Treino Pesado</span>
                         <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
@@ -106,6 +113,10 @@
                     </div>
                      <div class="habit-row">
                         <span class="habit-name">Acordar 06h</span>
+                        <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
+                    </div>
+                    <div class="habit-row">
+                        <span class="habit-name">4L de Água</span>
                         <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
                     </div>
                 </div>

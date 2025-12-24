@@ -85,3 +85,14 @@ h3 { font-size: 1rem; color: var(--text-gray); margin-bottom: 1rem; }
 .checks { display: contents; }
 .check { width: 30px; height: 30px; border-radius: 6px; background-color: #18181b; border: 1px solid var(--border); margin: 0 auto; cursor: pointer; transition: 0.2s; }
 .check.active { background-color: var(--primary); border-color: var(--primary); box-shadow: 0 0 8px var(--primary); }
+
+/* Ajuste para telas pequenas (Celular) */
+@media (max-width: 768px) {
+    .dashboard-container { flex-direction: column; }
+    .sidebar { width: 100%; flex-direction: row; padding: 1rem; align-items: center; overflow-x: auto; }
+    .sidebar-footer { display: none; } /* Ocultar reset no mobile para economizar espaço */
+    .menu span { display: none; } /* Ocultar textos do menu */
+    .charts-area { flex-direction: column; }
+    .habit-header, .habit-row { grid-template-columns: 100px repeat(7, 1fr); }
+    .check { width: 25px; height: 25px; }
+}
