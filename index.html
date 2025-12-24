@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gamer Life Dashboard</title>
+    <title>Gamer Life RPG</title>
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -14,21 +13,40 @@
     <div id="auth-screen" class="auth-screen">
         <div class="auth-card">
             <h2 class="auth-logo">GAMER LIFE</h2>
-            <div class="auth-form">
+
+            <div id="login-form" class="auth-box">
+                <h3>Login</h3>
                 <div class="input-group">
-                    <label>Nome do Jogador</label>
-                    <input type="text" id="username-input" placeholder="Digite seu Nickname...">
+                    <input type="text" id="login-user" placeholder="Nome de Usuário">
                 </div>
-                <button id="login-btn" class="auth-btn">START GAME</button>
+                <div class="input-group">
+                    <input type="password" id="login-pass" placeholder="Senha">
+                </div>
+                <button id="btn-login" class="auth-btn">ENTRAR</button>
+                <p class="switch-text">Não tem conta? <span onclick="toggleAuthMode()">Criar conta</span></p>
             </div>
-            <p class="auth-footer">Transforme sua vida num RPG.</p>
+
+            <div id="register-form" class="auth-box hidden">
+                <h3>Criar Nova Conta</h3>
+                <div class="input-group">
+                    <input type="text" id="reg-user" placeholder="Escolha seu Nick">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="reg-pass" placeholder="Crie uma Senha">
+                </div>
+                <button id="btn-register" class="auth-btn outline">CADASTRAR</button>
+                <p class="switch-text">Já tem conta? <span onclick="toggleAuthMode()">Fazer Login</span></p>
+            </div>
         </div>
     </div>
 
     <div class="dashboard-container">
         
         <aside class="sidebar">
-            <h2 class="logo" id="player-name">PLAYER 1</h2>
+            <div class="profile-area">
+                <div class="avatar-circle"><i class="ph ph-user"></i></div>
+                <h2 class="logo" id="player-name">PLAYER</h2>
+            </div>
             
             <nav class="menu">
                 <a href="#" class="menu-item active"><i class="ph ph-squares-four"></i> Dashboard</a>
@@ -47,7 +65,6 @@
         </aside>
 
         <main class="main-content">
-            
             <header class="level-header">
                 <div class="level-info">
                     <h1>Nível <span id="level-display">1</span></h1>
@@ -60,11 +77,11 @@
 
             <section class="charts-area">
                 <div class="card chart-card">
-                    <h3>Produtividade Semanal</h3>
+                    <h3>Produtividade</h3>
                     <canvas id="productivityChart"></canvas>
                 </div>
                 <div class="card chart-card">
-                    <h3>Foco vs. Humor</h3>
+                    <h3>Humor</h3>
                     <canvas id="moodChart"></canvas>
                 </div>
             </section>
@@ -75,42 +92,22 @@
                     <div class="habit-header">
                         <div></div> <span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span>
                     </div>
-
+                    <div class="habit-row">
+                        <span class="habit-name">Treino Pesado</span>
+                        <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
+                    </div>
                     <div class="habit-row">
                         <span class="habit-name">Dieta Limpa</span>
-                        <div class="checks">
-                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
-                        </div>
+                        <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
                     </div>
-                    
                     <div class="habit-row">
-                        <span class="habit-name">Leitura (10 pág)</span>
-                        <div class="checks">
-                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
-                        </div>
+                        <span class="habit-name">Leitura</span>
+                        <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
                     </div>
-
-                    <div class="habit-row">
-                        <span class="habit-name">Dormir < 00h</span>
-                        <div class="checks">
-                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
-                        </div>
+                     <div class="habit-row">
+                        <span class="habit-name">Acordar 06h</span>
+                        <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
                     </div>
-
-                    <div class="habit-row">
-                        <span class="habit-name">Cardio Pesado</span>
-                        <div class="checks">
-                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="habit-row">
-                        <span class="habit-name">4L de Água</span>
-                        <div class="checks">
-                            <div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div>
-                        </div>
-                    </div>
-
                 </div>
             </section>
         </main>
