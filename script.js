@@ -58,6 +58,7 @@ const achievementsList = [
 // ==========================================
 
 // Configura os cliques nos botões APENAS UMA VEZ
+// (Isso impede o erro de clique duplo/fantasma)
 allChecks.forEach((check, index) => {
     check.onclick = function() {
         toggleCheck(check, index);
@@ -120,7 +121,10 @@ function startGame(user) {
             checkAllAchievements();
             renderUI(); // Apenas pinta a tela, não mexe nos cliques
         } else {
-            db.collection('users').doc(user.uid).set(gameState);
+            // Cria conta nova
+            const initialData = { xp: 0, level: 1, checked: {}, unlockedAchievements: [] };
+            db.collection('users').doc(user.uid).set(initialData);
+            gameState = initialData;
             renderUI();
         }
     });
@@ -251,6 +255,7 @@ function showToast(icon, title, msg) {
 }
 function renderAchievements() {
     achievementsListEl.innerHTML = '';
+    const unlocked = gameState.unlockedAchievements || [];
     gameState.unlockedAchievements.forEach(id => {
         const ach = achievementsList.find(a => a.id === id);
         if(ach) achievementsListEl.innerHTML += `<div class="achievement-card unlocked"><i class="ph ${ach.icon}"></i><h4>${ach.title}</h4><p>${ach.desc}</p></div>`;
