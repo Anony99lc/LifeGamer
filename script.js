@@ -1,29 +1,20 @@
 // ==========================================
-// 0. CONFIGURAÇÃO FIREBASE (COLE SEUS DADOS AQUI)
+//  CONFIGURAÇÃO FIREBASE
 // ==========================================
 const firebaseConfig = {
-    // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCRzc-HFiR7uiYLujdIjRgKooLC0zZwNsw",
-  authDomain: "gamerliferpg.firebaseapp.com",
-  projectId: "gamerliferpg",
-  storageBucket: "gamerliferpg.firebasestorage.app",
-  messagingSenderId: "263163172876",
-  appId: "1:263163172876:web:0a95f4fca2a1b2f8117629",
-  measurementId: "G-Z8EEW5ZRW7"
+    apiKey: "AIzaSyCRzc-HFiR7uiYLujdIjRgKooLC0zZwNsw",
+    authDomain: "gamerliferpg.firebaseapp.com",
+    projectId: "gamerliferpg",
+    storageBucket: "gamerliferpg.firebasestorage.app",
+    messagingSenderId: "263163172876",
+    appId: "1:263163172876:web:0a95f4fca2a1b2f8117629"
 };
+// Nota: Não deixe nenhuma vírgula sobrando depois do último item (appId)
+// Nota: Não escreva nada além disso dentro das chaves { }
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-};
 
 // Inicializa Firebase
 if (!firebase.apps.length) {
