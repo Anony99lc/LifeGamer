@@ -4,49 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gamer Life RPG</title>
-    
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ff2e4d">
     <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
+    <div id="toast-container" class="toast-container"></div>
+
     <div id="auth-screen" class="auth-screen">
         <div class="auth-card">
             <h2 class="auth-logo">GAMER LIFE</h2>
-
             <div id="login-form" class="auth-box">
                 <h3>Login</h3>
-                <div class="input-group">
-                    <input type="text" id="login-user" placeholder="Nome de Usuário">
-                </div>
-                <div class="input-group">
-                    <input type="password" id="login-pass" placeholder="Senha">
-                </div>
+                <div class="input-group"><input type="text" id="login-user" placeholder="Nome de Usuário"></div>
+                <div class="input-group"><input type="password" id="login-pass" placeholder="Senha"></div>
                 <button id="btn-login" class="auth-btn">ENTRAR</button>
                 <p class="switch-text">Não tem conta? <span id="link-to-register">Criar conta</span></p>
             </div>
-
             <div id="register-form" class="auth-box hidden">
                 <h3>Criar Nova Conta</h3>
-                <div class="input-group">
-                    <input type="text" id="reg-user" placeholder="Escolha seu Nick">
-                </div>
-                <div class="input-group">
-                    <input type="password" id="reg-pass" placeholder="Crie uma Senha">
-                </div>
+                <div class="input-group"><input type="text" id="reg-user" placeholder="Escolha seu Nick"></div>
+                <div class="input-group"><input type="password" id="reg-pass" placeholder="Crie uma Senha"></div>
                 <button id="btn-register" class="auth-btn outline">CADASTRAR</button>
                 <p class="switch-text">Já tem conta? <span id="link-to-login">Fazer Login</span></p>
             </div>
         </div>
     </div>
 
+    <div id="achievements-screen" class="modal-screen hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🏆 Sala de Troféus</h2>
+                <button id="close-achievements" class="close-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="achievements-grid" id="achievements-list">
+                </div>
+        </div>
+    </div>
+
     <div class="dashboard-container">
-        
         <aside class="sidebar">
             <div class="profile-area">
                 <div class="avatar-circle"><i class="ph ph-user"></i></div>
@@ -54,68 +54,53 @@
             </div>
             
             <nav class="menu">
-                <a href="#" class="menu-item active"><i class="ph ph-squares-four"></i> Dashboard</a>
+                <a href="#" id="menu-dashboard" class="menu-item active"><i class="ph ph-squares-four"></i> Dashboard</a>
                 <a href="#" class="menu-item"><i class="ph ph-chart-line-up"></i> Estatísticas</a>
-                <a href="#" class="menu-item"><i class="ph ph-trophy"></i> Conquistas</a>
+                <a href="#" id="menu-achievements" class="menu-item"><i class="ph ph-trophy"></i> Conquistas</a>
             </nav>
 
             <div class="sidebar-footer">
-                <button id="reset-btn" class="action-btn warning">
-                    <i class="ph ph-arrow-counter-clockwise"></i> Nova Semana
-                </button>
-                <button id="logout-btn" class="action-btn danger">
-                    <i class="ph ph-sign-out"></i> Sair
-                </button>
+                <button id="reset-btn" class="action-btn warning"><i class="ph ph-arrow-counter-clockwise"></i> Nova Semana</button>
+                <button id="logout-btn" class="action-btn danger"><i class="ph ph-sign-out"></i> Sair</button>
             </div>
         </aside>
 
         <main class="main-content">
-            
             <header class="level-header">
                 <div class="level-info">
                     <h1>Nível <span id="level-display">1</span></h1>
                     <span id="xp-display">0 / 1000 XP</span>
                 </div>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" style="width: 0%"></div>
-                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%"></div></div>
             </header>
 
             <section class="charts-area">
-                <div class="card chart-card">
-                    <h3>Produtividade</h3>
-                    <canvas id="productivityChart"></canvas>
-                </div>
-                <div class="card chart-card">
-                    <h3>Humor Semanal</h3>
-                    <canvas id="moodChart"></canvas>
-                </div>
+                <div class="card chart-card"><h3>Produtividade</h3><canvas id="productivityChart"></canvas></div>
+                <div class="card chart-card"><h3>Humor Semanal</h3><canvas id="moodChart"></canvas></div>
             </section>
 
             <section class="habits-area">
                 <h3>Grade de Hábitos</h3>
                 <div class="card habits-container">
-                    <div class="habit-header">
-                        <div></div> <span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span>
-                    </div>
-
-                    <div class="habit-row">
+                    <div class="habit-header"><div></div> <span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span></div>
+                    
+                    <div class="habit-row" data-type="treino">
                         <span class="habit-name">Treino Pesado</span>
                         <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
                     </div>
-                    <div class="habit-row">
+                    <div class="habit-row" data-type="dieta">
                         <span class="habit-name">Dieta Limpa</span>
                         <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
                     </div>
-                    <div class="habit-row">
+                    <div class="habit-row" data-type="leitura">
                         <span class="habit-name">Leitura</span>
                         <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
                     </div>
-                     <div class="habit-row">
+                     <div class="habit-row" data-type="acordar">
                         <span class="habit-name">Acordar 06h</span>
                         <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
                     </div>
-                    <div class="habit-row">
+                    <div class="habit-row" data-type="agua">
                         <span class="habit-name">4L de Água</span>
                         <div class="checks"><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div><div class="check"></div></div>
                     </div>
@@ -123,7 +108,6 @@
             </section>
         </main>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
