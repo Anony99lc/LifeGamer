@@ -174,13 +174,9 @@ function saveGameData() {
 }
 
 function renderUI() {
-    // ADICIONE ISTO AQUI:
-    // Mostra os 4 primeiros dígitos do ID ao lado do Nível
-    if(currentUser && currentUser.uid) {
-        levelDisplay.innerText = gameState.level + " (" + currentUser.uid.slice(0, 4) + ")";
-    } else {
-        levelDisplay.innerText = gameState.level;
-    }
+    // Versão Limpa (Sem o ID entre parênteses)
+    levelDisplay.innerText = gameState.level;
+    
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 
