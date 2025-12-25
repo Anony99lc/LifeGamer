@@ -2,12 +2,12 @@
 //  CONFIGURAÇÃO FIREBASE
 // ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSyCRzc-HFiR7uiYLujdIjRgKooLC0zZwNsw",
-    authDomain: "gamerliferpg.firebaseapp.com",
-    projectId: "gamerliferpg",
-    storageBucket: "gamerliferpg.firebasestorage.app",
-    messagingSenderId: "263163172876",
-    appId: "1:263163172876:web:0a95f4fca2a1b2f8117629"
+    apiKey: "AIzaSyDmnIt0JFWMhWhsgKFjc9YWXgbPtUJmoLs",
+    authDomain: "gamerlife-v2.firebaseapp.com",
+    projectId: "gamerlife-v2",
+    storageBucket: "gamerlife-v2.firebasestorage.app",
+    messagingSenderId: "1099149362318",
+    appId: "1:1099149362318:web:3611a4d37ec95b886335df"
 };
 // Nota: Não escreva nada além disso dentro das chaves { }
 
