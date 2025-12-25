@@ -193,35 +193,32 @@ function renderAchievements() {
     });
 }
 
-// Eventos do Menu
+// --- EVENTOS DO MENU (CORRIGIDO) ---
+
 document.getElementById('menu-achievements').addEventListener('click', (e) => {
     e.preventDefault();
-    renderAchievements();
-    achievementsScreen.classList.add('active');
+    renderAchievements(); // Desenha as conquistas
+    
+    // 1. Remove o "display: none"
+    achievementsScreen.classList.remove('hidden');
+    
+    // 2. Espera 10ms para adicionar o efeito visual (Fade In)
+    setTimeout(() => {
+        achievementsScreen.classList.add('active');
+    }, 10);
 });
 
 document.getElementById('close-achievements').addEventListener('click', () => {
+    // 1. Remove o efeito visual (Fade Out)
     achievementsScreen.classList.remove('active');
+    
+    // 2. Espera a animação acabar (300ms) para esconder de vez
+    setTimeout(() => {
+        achievementsScreen.classList.add('hidden');
+    }, 300);
 });
 
 document.getElementById('menu-dashboard').addEventListener('click', () => {
     achievementsScreen.classList.remove('active');
+    setTimeout(() => achievementsScreen.classList.add('hidden'), 300);
 });
-
-// PWA e Charts (Mantenha igual)
-if(document.getElementById('productivityChart')) {
-    new Chart(document.getElementById('productivityChart'), {
-        type: 'line',
-        data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [3,5,2,6,4,7,5], borderColor: '#ff2e4d', backgroundColor: 'rgba(255,46,77,0.1)', fill: true, tension: 0.4 }] },
-        options: { plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'#27272a'}}} }
-    });
-    new Chart(document.getElementById('moodChart'), {
-        type: 'bar',
-        data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [7,6,8,5,7,9,8], backgroundColor: '#27272a', hoverBackgroundColor: '#ff2e4d', borderRadius: 4 }] },
-        options: { plugins:{legend:false}, scales:{x:{display:false}, y:{display:false}} }
-    });
-}
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); }
-
-// INICIAR
-initAuth();
