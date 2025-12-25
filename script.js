@@ -38,6 +38,9 @@ const achievementsScreen = document.getElementById('achievements-screen');
 const achievementsListEl = document.getElementById('achievements-list');
 const toastContainer = document.getElementById('toast-container');
 
+// Variável Global do Gráfico (IMPORTANTE)
+let productivityChart = null;
+
 // Dados de Conquistas
 const achievementsList = [
     { id: 'first_step', icon: 'ph-footprints', title: 'Primeiro Passo', desc: 'Marque seu primeiro hábito.' },
@@ -109,10 +112,6 @@ function startGame(user) {
 
     unsubscribe = docRef.onSnapshot((doc) => {
         if (doc.exists) {
-            // !!! O ALARME ESPIÃO !!!
-            // Se aparecer no celular, a conexão está perfeita!
-            console.log("Recebi dados novos!"); 
-            
             gameState = doc.data();
             
             // Correções de segurança
@@ -179,12 +178,16 @@ function renderUI() {
             toggleCheck(check, index);
         };
     });
+    
+    // Atualiza o gráfico sempre que a tela mudar
+    updateProductivityChart();
 }
 
 function toggleCheck(el, index) {
     if (el.classList.contains('locked')) return alert("🔒 Hoje não é esse dia!");
     
-    if (el.classList.contains('active')) {
+    // Lógica Matemática
+    if (gameState.checked[index]) {
         delete gameState.checked[index];
         gameState.xp -= xpPerCheck;
         if(gameState.xp < 0) gameState.xp = 0;
@@ -194,6 +197,7 @@ function toggleCheck(el, index) {
         checkAchievements(index);
     }
     
+    // Level Up
     if (gameState.xp >= xpToNextLevel) {
         gameState.level++;
         gameState.xp -= xpToNextLevel;
@@ -201,15 +205,30 @@ function toggleCheck(el, index) {
         unlockAchievement('level_2');
     }
 
+    // Salva no banco (O renderUI será chamado automaticamente pelo onSnapshot)
     saveGameData(); 
-    // Renderização visual imediata
-    el.classList.toggle('active'); 
-    levelDisplay.innerText = gameState.level;
-    xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
-    progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 }
 
-// ... (Resto das funções de Conquista igual ao anterior) ...
+function updateProductivityChart() {
+    // 1. Zera os contadores (Seg a Dom)
+    let dayCounts = [0, 0, 0, 0, 0, 0, 0]; 
+
+    // 2. Conta quantos checks existem em cada dia
+    if (gameState.checked) {
+        Object.keys(gameState.checked).forEach(index => {
+            const colIndex = parseInt(index) % 7; // Descobre a coluna (0=Seg, 6=Dom)
+            dayCounts[colIndex]++; // Soma +1 naquele dia
+        });
+    }
+
+    // 3. Atualiza o gráfico se ele já existir
+    if (productivityChart) {
+        productivityChart.data.datasets[0].data = dayCounts;
+        productivityChart.update();
+    }
+}
+
+// ... (Funções de Conquista) ...
 function checkAllAchievements() { if(gameState.checked) Object.keys(gameState.checked).forEach(idx => checkAchievements(parseInt(idx))); }
 function checkAchievements(lastIndex) {
     if (!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
@@ -257,4 +276,63 @@ document.getElementById('close-achievements').addEventListener('click', () => { 
 document.getElementById('menu-dashboard').addEventListener('click', () => { achievementsScreen.classList.remove('active'); setTimeout(() => achievementsScreen.classList.add('hidden'), 300); });
 document.getElementById('reset-btn').addEventListener('click', () => { if(confirm("Nova semana?")) { gameState.checked = {}; saveGameData(); } });
 
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); }
+// ==========================================
+// 3. INICIALIZAÇÃO DE GRÁFICOS E PWA
+// ==========================================
+
+// Configuração do Gráfico de Produtividade
+const chartCanvas = document.getElementById('productivityChart');
+if(chartCanvas) {
+    const ctxProd = chartCanvas.getContext('2d');
+    productivityChart = new Chart(ctxProd, { 
+        type: 'line', 
+        data: { 
+            labels: ['S','T','Q','Q','S','S','D'], 
+            datasets: [{ 
+                data: [0,0,0,0,0,0,0], // Começa vazio, a função updateProductivityChart vai preencher
+                borderColor: '#ff2e4d', 
+                backgroundColor: 'rgba(255,46,77,0.1)', 
+                fill: true, 
+                tension: 0.4 
+            }] 
+        }, 
+        options: { 
+            plugins:{legend:false}, 
+            scales:{
+                x:{display:false}, 
+                y:{
+                    beginAtZero: true, 
+                    suggestedMax: 5,
+                    grid:{color:'#27272a'}
+                }
+            } 
+        } 
+    });
+}
+
+// Configuração do Gráfico de Humor (Visual apenas)
+const moodCanvas = document.getElementById('moodChart');
+if(moodCanvas) {
+    const ctxMood = moodCanvas.getContext('2d');
+    new Chart(ctxMood, { 
+        type: 'bar', 
+        data: { 
+            labels: ['S','T','Q','Q','S','S','D'], 
+            datasets: [{ 
+                data: [7,6,8,5,7,9,8], 
+                backgroundColor: '#27272a', 
+                hoverBackgroundColor: '#ff2e4d', 
+                borderRadius: 4 
+            }] 
+        }, 
+        options: { 
+            plugins:{legend:false}, 
+            scales:{x:{display:false}, y:{display:false}} 
+        } 
+    });
+}
+
+// Registro do Service Worker (PWA)
+if ('serviceWorker' in navigator) { 
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); 
+}
