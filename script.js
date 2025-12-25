@@ -37,14 +37,14 @@ const achievementsScreen = document.getElementById('achievements-screen');
 const achievementsListEl = document.getElementById('achievements-list');
 const toastContainer = document.getElementById('toast-container');
 
-// Variável Global do Gráfico
+// Variáveis Globais
 let productivityChart = null;
 let levelUpSound = null; 
 
-// Tenta carregar o som (se existir)
+// Tenta carregar o som
 try { levelUpSound = new Audio('./levelup.mp3'); levelUpSound.volume = 0.5; } catch(e) {}
 
-// Dados de Conquistas
+// Conquistas
 const achievementsList = [
     { id: 'first_step', icon: 'ph-footprints', title: 'Primeiro Passo', desc: 'Marque seu primeiro hábito.' },
     { id: 'gym_rat', icon: 'ph-barbell', title: 'Rato de Academia', desc: 'Complete um treino.' },
@@ -115,9 +115,10 @@ function startGame(user) {
     unsubscribe = docRef.onSnapshot((doc) => {
         if (doc.exists) {
             gameState = doc.data();
+            // Correções de segurança nos dados
             if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
             if(!gameState.checked) gameState.checked = {};
-
+            
             checkAllAchievements();
             renderUI();
         } else {
@@ -142,36 +143,38 @@ function renderUI() {
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 
-    // 2. Calcula dia
+    // 2. Calcula dia de hoje
     const date = new Date();
     const jsDay = date.getDay();
     const todayIndex = (jsDay === 0) ? 6 : jsDay - 1;
 
-    // 3. Atualiza os Botões (Sem recriar elementos)
+    // 3. Atualiza os Botões
     const currentChecks = document.querySelectorAll('.check');
 
     currentChecks.forEach((check, index) => {
-        check.onclick = null; // Limpa cliques antigos
+        // Remove listeners antigos para evitar duplicação
+        const newCheck = check.cloneNode(true);
+        check.parentNode.replaceChild(newCheck, check);
 
-        // Estado Visual
+        // Define Visual
         if (gameState.checked && gameState.checked[index]) {
-            check.classList.add('active');
+            newCheck.classList.add('active');
         } else {
-            check.classList.remove('active');
+            newCheck.classList.remove('active');
         }
 
-        // Bloqueio de Dias
+        // Define Cadeado
         const colIndex = index % 7;
         if (colIndex !== todayIndex) { 
-            check.classList.add('locked'); 
-            check.title = "Dia bloqueado!"; 
+            newCheck.classList.add('locked'); 
+            newCheck.title = "Dia bloqueado!"; 
         } else {
-            check.classList.remove('locked');
-            check.title = "Clique para marcar";
+            newCheck.classList.remove('locked');
+            newCheck.title = "Clique para marcar";
         }
 
-        // Novo Clique
-        check.onclick = function() { toggleCheck(check, index); };
+        // Adiciona Clique Novo
+        newCheck.addEventListener('click', () => toggleCheck(newCheck, index));
     });
     
     updateProductivityChart();
@@ -182,22 +185,24 @@ function toggleCheck(el, index) {
         return alert("🔒 Você só pode alterar o dia de hoje!");
     }
     
-    // ATUALIZAÇÃO OTIMISTA (Muda visual na hora)
-    const isVisuallyActive = el.classList.contains('active');
+    // LÓGICA CORRIGIDA: Confia nos DADOS, não só no visual
+    const isChecked = gameState.checked && gameState.checked[index];
 
-    if (isVisuallyActive) {
-        // Desmarcar
-        el.classList.remove('active');
+    if (isChecked) {
+        // --- DESMARCAR ---
         if(gameState.checked) delete gameState.checked[index];
         gameState.xp -= xpPerCheck;
         if(gameState.xp < 0) gameState.xp = 0;
+        
+        el.classList.remove('active'); // Força visual
     } else {
-        // Marcar
-        el.classList.add('active');
+        // --- MARCAR ---
         if(!gameState.checked) gameState.checked = {};
         gameState.checked[index] = true;
         gameState.xp += xpPerCheck;
         checkAchievements(index);
+        
+        el.classList.add('active'); // Força visual
     }
     
     // Level Up
@@ -209,13 +214,14 @@ function toggleCheck(el, index) {
         unlockAchievement('level_2');
     }
 
-    // Atualiza interface e salva
+    // Salva e Atualiza
+    saveGameData(); 
+    
+    // Atualiza textos imediatos
     levelDisplay.innerText = gameState.level;
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
-    
     updateProductivityChart();
-    saveGameData(); 
 }
 
 function updateProductivityChart() {
@@ -232,7 +238,7 @@ function updateProductivityChart() {
     }
 }
 
-// Funções Auxiliares
+// Funções Auxiliares (Conquistas, Toast, etc)
 function checkAllAchievements() { if(gameState.checked) Object.keys(gameState.checked).forEach(idx => checkAchievements(parseInt(idx))); }
 function checkAchievements(lastIndex) {
     if (!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
@@ -283,7 +289,7 @@ document.getElementById('menu-dashboard').addEventListener('click', () => { achi
 document.getElementById('reset-btn').addEventListener('click', () => { if(confirm("Nova semana?")) { gameState.checked = {}; saveGameData(); } });
 
 // ==========================================
-// 3. INICIALIZAÇÃO DE GRÁFICOS (Única e Final)
+// 3. INICIALIZAÇÃO DE GRÁFICOS (Única vez)
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Inicia Gráfico Produtividade
@@ -307,7 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 scales:{ x:{display:false}, y:{ beginAtZero: true, suggestedMax: 5, grid:{color:'#27272a'} } } 
             } 
         });
-        setTimeout(updateProductivityChart, 500);
     }
 
     // 2. Inicia Gráfico Humor
