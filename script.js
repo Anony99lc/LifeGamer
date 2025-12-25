@@ -2,19 +2,17 @@
 const xpPerCheck = 15;
 const xpToNextLevel = 1000;
 
-// Elementos Auth
+// Elementos
 const authScreen = document.getElementById('auth-screen');
 const loginForm = document.getElementById('login-form');
 const registerForm = document.getElementById('register-form');
 const playerDisplay = document.getElementById('player-name');
-
-// Elementos Jogo
 const levelDisplay = document.getElementById('level-display');
 const xpDisplay = document.getElementById('xp-display');
 const progressBar = document.querySelector('.progress-bar-fill');
 const checks = document.querySelectorAll('.check');
 
-// Conquistas
+// Conquistas & Toast
 const achievementsScreen = document.getElementById('achievements-screen');
 const achievementsListEl = document.getElementById('achievements-list');
 const toastContainer = document.getElementById('toast-container');
@@ -38,7 +36,6 @@ let gameState = { xp: 0, level: 1, checked: {}, unlockedAchievements: [] };
 // ==========================================
 // 1. SISTEMA DE LOGIN E CADASTRO
 // ==========================================
-
 document.getElementById('link-to-register').addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
 document.getElementById('link-to-login').addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
 
@@ -75,7 +72,6 @@ document.getElementById('logout-btn').addEventListener('click', () => { localSto
 // ==========================================
 // 2. LÓGICA DO JOGO
 // ==========================================
-
 function startGame(user) {
     currentUser = user;
     playerDisplay.innerText = user;
@@ -88,28 +84,26 @@ function loadGameData() {
     const data = JSON.parse(localStorage.getItem(`user_data_${currentUser}`));
     if (data) { 
         gameState = { ...gameState, ...data };
+        // AUTO-REPARO: Se não existir lista de conquistas, cria uma vazia agora
         if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
-        if (data) {
-        gameState = { ...gameState, ...data };
-        if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
-    
-    // NOVO: Verifica conquistas antigas automaticamente
-    Object.keys(gameState.checked).forEach(index => {
-        checkAchievements(parseInt(index));
-    });
-
-    renderUI();
-}
+        
+        // Verifica conquistas antigas que podem ter passado batido
+        setTimeout(() => checkAllAchievements(), 1000);
+        
         renderUI();
     }
 }
 
 function saveGameData() {
-    const currentData = JSON.parse(localStorage.getItem(`user_data_${currentUser}`));
+    // Garante que não salva null
+    if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
+    
+    const currentData = JSON.parse(localStorage.getItem(`user_data_${currentUser}`)) || {};
     currentData.xp = gameState.xp;
     currentData.level = gameState.level;
     currentData.checked = gameState.checked;
     currentData.unlockedAchievements = gameState.unlockedAchievements;
+    
     localStorage.setItem(`user_data_${currentUser}`, JSON.stringify(currentData));
 }
 
@@ -118,19 +112,16 @@ function renderUI() {
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 
-    // LÓGICA DO CADEADO (DIAS)
     const date = new Date();
-    const jsDay = date.getDay(); // 0(Dom) a 6(Sáb)
-    const todayIndex = (jsDay === 0) ? 6 : jsDay - 1; // 0(Seg) a 6(Dom)
+    const jsDay = date.getDay(); 
+    const todayIndex = (jsDay === 0) ? 6 : jsDay - 1; 
 
     checks.forEach((check, index) => {
-        // Clona para limpar eventos antigos
         const newCheck = check.cloneNode(true);
         check.parentNode.replaceChild(newCheck, check);
         
-        const colIndex = index % 7; // Qual coluna é?
+        const colIndex = index % 7; 
         
-        // Bloqueia se não for hoje
         if (colIndex !== todayIndex) { 
             newCheck.classList.add('locked'); 
             newCheck.title = "Apenas o dia de hoje está liberado!"; 
@@ -145,7 +136,7 @@ function renderUI() {
 }
 
 function toggleCheck(el, index) {
-    if (el.classList.contains('locked')) return alert("🔒 Hoje não é esse dia! Volte no dia certo.");
+    if (el.classList.contains('locked')) return alert("🔒 Hoje não é esse dia!");
     
     if (el.classList.contains('active')) {
         el.classList.remove('active');
@@ -155,7 +146,7 @@ function toggleCheck(el, index) {
         el.classList.add('active');
         gameState.checked[index] = true;
         updateXP(xpPerCheck);
-        checkAchievements(index); // Checa conquistas
+        checkAchievements(index); // Verifica conquista ao clicar
     }
     saveGameData();
 }
@@ -166,30 +157,41 @@ function updateXP(amount) {
     if (gameState.xp >= xpToNextLevel) {
         gameState.level++;
         gameState.xp -= xpToNextLevel;
-        showToast('ph-arrow-fat-up', 'LEVEL UP!', `Bem-vindo ao nível ${gameState.level}!`);
+        showToast('ph-arrow-fat-up', 'LEVEL UP!', `Nível ${gameState.level} alcançado!`);
         unlockAchievement('level_2');
     }
     renderUI();
 }
 
 // ==========================================
-// 3. CONQUISTAS & NOTIFICAÇÕES
+// 3. CONQUISTAS (Com Correção de Erros)
 // ==========================================
 
+function checkAllAchievements() {
+    // Verifica tudo de uma vez (útil para contas antigas)
+    Object.keys(gameState.checked).forEach(idx => checkAchievements(parseInt(idx)));
+}
+
 function checkAchievements(lastIndex) {
-    unlockAchievement('first_step'); // Qualquer clique
+    // Garante que o array existe antes de tentar usar
+    if (!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
+
+    unlockAchievement('first_step'); // Desbloqueia no primeiro clique
     
     if (Object.keys(gameState.checked).length >= 10) unlockAchievement('dedicated');
 
-    // Verifica linhas específicas (baseado na ordem do HTML)
-    if (lastIndex >= 0 && lastIndex <= 6) unlockAchievement('gym_rat');   // Linha 1: Treino
-    if (lastIndex >= 7 && lastIndex <= 13) unlockAchievement('diet_master'); // Linha 2: Dieta
-    if (lastIndex >= 14 && lastIndex <= 20) unlockAchievement('bookworm'); // Linha 3: Leitura
-    if (lastIndex >= 21 && lastIndex <= 27) unlockAchievement('early_bird'); // Linha 4: Acordar
-    if (lastIndex >= 28 && lastIndex <= 34) unlockAchievement('hydrated'); // Linha 5: Água
+    // Índices baseados nas 5 linhas de 7 dias (0-34)
+    if (lastIndex >= 0 && lastIndex <= 6) unlockAchievement('gym_rat');
+    if (lastIndex >= 7 && lastIndex <= 13) unlockAchievement('diet_master');
+    if (lastIndex >= 14 && lastIndex <= 20) unlockAchievement('bookworm');
+    if (lastIndex >= 21 && lastIndex <= 27) unlockAchievement('early_bird');
+    if (lastIndex >= 28 && lastIndex <= 34) unlockAchievement('hydrated');
 }
 
 function unlockAchievement(id) {
+    // Proteção extra contra erro de dados
+    if (!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
+
     if (gameState.unlockedAchievements.includes(id)) return; // Já tem
 
     const achievement = achievementsList.find(a => a.id === id);
@@ -198,23 +200,40 @@ function unlockAchievement(id) {
         saveGameData();
         showToast(achievement.icon, 'Conquista Desbloqueada!', achievement.title);
         
+        // Atualiza a tela se estiver aberta
         if (achievementsScreen.classList.contains('active')) renderAchievements();
     }
 }
 
 function showToast(icon, title, msg) {
-    if(!toastContainer) return;
+    if(!toastContainer) return console.log("Erro: Toast container não achado");
+    
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerHTML = `<i class="ph ${icon}"></i><div class="toast-content"><h4>${title}</h4><p>${msg}</p></div>`;
+    
     toastContainer.appendChild(toast);
-    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 4000);
+    
+    // Animação
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 10);
+
+    // Remover
+    setTimeout(() => { 
+        toast.style.opacity = '0'; 
+        setTimeout(() => toast.remove(), 500); 
+    }, 4000);
 }
 
 function renderAchievements() {
     achievementsListEl.innerHTML = '';
+    // Proteção extra
+    const unlocked = gameState.unlockedAchievements || [];
+    
     achievementsList.forEach(ach => {
-        const isUnlocked = gameState.unlockedAchievements.includes(ach.id);
+        const isUnlocked = unlocked.includes(ach.id);
         const card = document.createElement('div');
         card.className = `achievement-card ${isUnlocked ? 'unlocked' : ''}`;
         card.innerHTML = `<i class="ph ${ach.icon}"></i><h4>${ach.title}</h4><p>${ach.desc}</p>`;
@@ -222,7 +241,7 @@ function renderAchievements() {
     });
 }
 
-// Menu Conquistas
+// MENU EVENTS
 document.getElementById('menu-achievements').addEventListener('click', (e) => {
     e.preventDefault();
     renderAchievements();
@@ -241,14 +260,10 @@ document.getElementById('menu-dashboard').addEventListener('click', () => {
 });
 
 document.getElementById('reset-btn').addEventListener('click', () => {
-    if(confirm("Começar nova semana?")) { gameState.checked = {}; saveGameData(); loadGameData(); }
+    if(confirm("Começar nova semana?")) { gameState.checked = {}; saveGameData(); location.reload(); }
 });
 
-// ==========================================
-// 4. INICIALIZAÇÃO
-// ==========================================
-
-// Charts
+// Inicialização
 if(document.getElementById('productivityChart')) {
     new Chart(document.getElementById('productivityChart'), {
         type: 'line',
@@ -261,8 +276,6 @@ if(document.getElementById('productivityChart')) {
         options: { plugins:{legend:false}, scales:{x:{display:false}, y:{display:false}} }
     });
 }
-
-// PWA
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); }
 
 initAuth();
