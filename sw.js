@@ -1,4 +1,4 @@
-const CACHE_NAME = "gamer-life-v9";
+const CACHE_NAME = "gamer-life-v10";
 const ASSETS = [
   "./",
   "./index.html",
