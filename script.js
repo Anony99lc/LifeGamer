@@ -9,27 +9,20 @@ const firebaseConfig = {
     messagingSenderId: "263163172876",
     appId: "1:263163172876:web:0a95f4fca2a1b2f8117629"
 };
-// Nota: Não deixe nenhuma vírgula sobrando depois do último item (appId)
 // Nota: Não escreva nada além disso dentro das chaves { }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-// Inicializa Firebase
+// Inicializa Firebase (Verifica se já não foi iniciado antes)
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
+
+// Configura as variáveis de acesso
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Ativar modo offline (funciona sem internet e sincroniza quando voltar)
+// Tenta ativar o modo offline
 db.enablePersistence().catch(err => {
-    if (err.code == 'failed-precondition') {
-        console.log("Múltiplas abas abertas. Offline mode funciona em uma só.");
-    } else if (err.code == 'unimplemented') {
-        console.log("Navegador não suporta offline mode.");
-    }
+    console.log("Persistência offline:", err.code);
 });
 
 // ==========================================
