@@ -1,4 +1,49 @@
-// --- CONFIGURAÇÃO ---
+// ==========================================
+// 0. CONFIGURAÇÃO FIREBASE (COLE SEUS DADOS AQUI)
+// ==========================================
+const firebaseConfig = {
+    // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCRzc-HFiR7uiYLujdIjRgKooLC0zZwNsw",
+  authDomain: "gamerliferpg.firebaseapp.com",
+  projectId: "gamerliferpg",
+  storageBucket: "gamerliferpg.firebasestorage.app",
+  messagingSenderId: "263163172876",
+  appId: "1:263163172876:web:0a95f4fca2a1b2f8117629",
+  measurementId: "G-Z8EEW5ZRW7"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+};
+
+// Inicializa Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Ativar modo offline (funciona sem internet e sincroniza quando voltar)
+db.enablePersistence().catch(err => {
+    if (err.code == 'failed-precondition') {
+        console.log("Múltiplas abas abertas. Offline mode funciona em uma só.");
+    } else if (err.code == 'unimplemented') {
+        console.log("Navegador não suporta offline mode.");
+    }
+});
+
+// ==========================================
+// CONFIGURAÇÃO DO JOGO
+// ==========================================
 const xpPerCheck = 15;
 const xpToNextLevel = 1000;
 
@@ -7,17 +52,16 @@ const authScreen = document.getElementById('auth-screen');
 const loginForm = document.getElementById('login-form');
 const registerForm = document.getElementById('register-form');
 const playerDisplay = document.getElementById('player-name');
+const userAvatar = document.getElementById('user-avatar');
 const levelDisplay = document.getElementById('level-display');
 const xpDisplay = document.getElementById('xp-display');
 const progressBar = document.querySelector('.progress-bar-fill');
 const checks = document.querySelectorAll('.check');
-
-// Conquistas & Toast
 const achievementsScreen = document.getElementById('achievements-screen');
 const achievementsListEl = document.getElementById('achievements-list');
 const toastContainer = document.getElementById('toast-container');
 
-// LISTA DE CONQUISTAS
+// Dados
 const achievementsList = [
     { id: 'first_step', icon: 'ph-footprints', title: 'Primeiro Passo', desc: 'Marque seu primeiro hábito.' },
     { id: 'gym_rat', icon: 'ph-barbell', title: 'Rato de Academia', desc: 'Complete um treino.' },
@@ -29,82 +73,125 @@ const achievementsList = [
     { id: 'level_2', icon: 'ph-arrow-fat-up', title: 'Level Up', desc: 'Chegou ao Nível 2.' }
 ];
 
-// Estado Inicial
 let currentUser = null;
+// Estado padrão
 let gameState = { xp: 0, level: 1, checked: {}, unlockedAchievements: [] };
+// Para cancelar o "espião" do banco de dados ao sair
+let unsubscribe = null; 
 
 // ==========================================
-// 1. SISTEMA DE LOGIN E CADASTRO
+// 1. SISTEMA DE AUTENTICAÇÃO (REAL)
 // ==========================================
-document.getElementById('link-to-register').addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
-document.getElementById('link-to-login').addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
 
-function initAuth() {
-    const sessionUser = localStorage.getItem('gamer_session_user');
-    if (sessionUser) { currentUser = sessionUser; startGame(sessionUser); }
-    else { authScreen.classList.remove('hidden'); }
-}
+// Monitora se o usuário entrou ou saiu (Ouve o Firebase)
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        // Usuário entrou
+        currentUser = user;
+        startGame(user);
+    } else {
+        // Usuário saiu
+        currentUser = null;
+        authScreen.classList.remove('hidden');
+        authScreen.style.opacity = '1';
+        if(unsubscribe) unsubscribe(); // Para de ouvir o banco de dados
+    }
+});
 
+// Login com Google
+document.getElementById('btn-google').addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(error => alert("Erro Google: " + error.message));
+});
+
+// Login com Email/Senha (Firebase Real)
 document.getElementById('btn-login').addEventListener('click', () => {
-    const user = document.getElementById('login-user').value.trim();
+    const email = document.getElementById('login-user').value.trim(); // Agora pede email
     const pass = document.getElementById('login-pass').value.trim();
-    const storedData = localStorage.getItem(`user_data_${user}`);
-    
-    if (!storedData) return alert("Usuário não encontrado!");
-    if (JSON.parse(storedData).password === pass) { localStorage.setItem('gamer_session_user', user); startGame(user); }
-    else { alert("Senha incorreta!"); }
+    auth.signInWithEmailAndPassword(email, pass).catch(error => alert("Erro: " + error.message));
 });
 
+// Cadastro com Email/Senha (Firebase Real)
 document.getElementById('btn-register').addEventListener('click', () => {
-    const user = document.getElementById('reg-user').value.trim();
+    const email = document.getElementById('reg-user').value.trim(); // Agora pede email
     const pass = document.getElementById('reg-pass').value.trim();
-    if (!user || !pass) return alert("Preencha tudo!");
-    if (localStorage.getItem(`user_data_${user}`)) return alert("Usuário já existe!");
     
-    const newUser = { password: pass, xp: 0, level: 1, checked: {}, unlockedAchievements: [] };
-    localStorage.setItem(`user_data_${user}`, JSON.stringify(newUser));
-    alert("Criado! Faça login.");
-    registerForm.classList.add('hidden'); loginForm.classList.remove('hidden');
+    auth.createUserWithEmailAndPassword(email, pass)
+        .then(() => {
+            alert("Conta criada! Você já está logado.");
+            // O onAuthStateChanged vai lidar com o resto
+        })
+        .catch(error => alert("Erro ao criar: " + error.message));
 });
 
-document.getElementById('logout-btn').addEventListener('click', () => { localStorage.removeItem('gamer_session_user'); location.reload(); });
+// Logout
+document.getElementById('logout-btn').addEventListener('click', () => { 
+    auth.signOut();
+    location.reload(); 
+});
+
+// Alternar Telas
+document.getElementById('link-to-register').addEventListener('click', () => { 
+    loginForm.classList.add('hidden'); 
+    registerForm.classList.remove('hidden'); 
+    // Muda os placeholders para Email
+    document.getElementById('reg-user').placeholder = "Seu Email";
+});
+document.getElementById('link-to-login').addEventListener('click', () => { 
+    registerForm.classList.add('hidden'); 
+    loginForm.classList.remove('hidden'); 
+    document.getElementById('login-user').placeholder = "Seu Email";
+});
+
 
 // ==========================================
-// 2. LÓGICA DO JOGO
+// 2. LÓGICA DO JOGO (COM BANCO DE DADOS)
 // ==========================================
+
 function startGame(user) {
-    currentUser = user;
-    playerDisplay.innerText = user;
+    // Define nome e foto
+    playerDisplay.innerText = user.displayName || user.email.split('@')[0];
+    if(user.photoURL) {
+        userAvatar.innerHTML = `<img src="${user.photoURL}" alt="Avatar">`;
+    } else {
+        userAvatar.innerHTML = `<i class="ph ph-user"></i>`;
+    }
+
+    // Esconde tela de login
     authScreen.style.opacity = '0';
     setTimeout(() => authScreen.classList.add('hidden'), 500);
-    loadGameData();
-}
 
-function loadGameData() {
-    const data = JSON.parse(localStorage.getItem(`user_data_${currentUser}`));
-    if (data) { 
-        gameState = { ...gameState, ...data };
-        // AUTO-REPARO: Se não existir lista de conquistas, cria uma vazia agora
-        if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
-        
-        // Verifica conquistas antigas que podem ter passado batido
-        setTimeout(() => checkAllAchievements(), 1000);
-        
-        renderUI();
-    }
+    // LIGA O "ESPIÃO" DO BANCO DE DADOS (REALTIME)
+    // Se você mudar algo no celular, o PC atualiza sozinho!
+    const docRef = db.collection('users').doc(user.uid);
+
+    unsubscribe = docRef.onSnapshot((doc) => {
+        if (doc.exists) {
+            // Carrega dados da nuvem
+            gameState = doc.data();
+            
+            // Correção de bugs antigos
+            if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
+            if(!gameState.checked) gameState.checked = {};
+            
+            checkAllAchievements(); // Verifica conquistas retroativas
+            renderUI();
+        } else {
+            // Se é o primeiro acesso, cria o documento no banco
+            const initialData = { xp: 0, level: 1, checked: {}, unlockedAchievements: [] };
+            docRef.set(initialData);
+            gameState = initialData;
+            renderUI();
+        }
+    });
 }
 
 function saveGameData() {
-    // Garante que não salva null
-    if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
-    
-    const currentData = JSON.parse(localStorage.getItem(`user_data_${currentUser}`)) || {};
-    currentData.xp = gameState.xp;
-    currentData.level = gameState.level;
-    currentData.checked = gameState.checked;
-    currentData.unlockedAchievements = gameState.unlockedAchievements;
-    
-    localStorage.setItem(`user_data_${currentUser}`, JSON.stringify(currentData));
+    // Salva na Nuvem (Cloud Firestore)
+    if(currentUser) {
+        db.collection('users').doc(currentUser.uid).set(gameState, { merge: true })
+        .catch(err => console.error("Erro ao salvar:", err));
+    }
 }
 
 function renderUI() {
@@ -113,24 +200,23 @@ function renderUI() {
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 
     const date = new Date();
-    const jsDay = date.getDay(); 
-    const todayIndex = (jsDay === 0) ? 6 : jsDay - 1; 
+    const jsDay = date.getDay();
+    const todayIndex = (jsDay === 0) ? 6 : jsDay - 1;
 
     checks.forEach((check, index) => {
         const newCheck = check.cloneNode(true);
         check.parentNode.replaceChild(newCheck, check);
         
-        const colIndex = index % 7; 
+        const colIndex = index % 7;
         
         if (colIndex !== todayIndex) { 
             newCheck.classList.add('locked'); 
-            newCheck.title = "Apenas o dia de hoje está liberado!"; 
+            newCheck.title = "Dia bloqueado!"; 
         } else {
             newCheck.classList.remove('locked');
         }
 
-        if (gameState.checked[index]) newCheck.classList.add('active');
-        
+        if (gameState.checked && gameState.checked[index]) newCheck.classList.add('active');
         newCheck.addEventListener('click', () => toggleCheck(newCheck, index));
     });
 }
@@ -139,48 +225,46 @@ function toggleCheck(el, index) {
     if (el.classList.contains('locked')) return alert("🔒 Hoje não é esse dia!");
     
     if (el.classList.contains('active')) {
-        el.classList.remove('active');
+        // Desmarcar
         delete gameState.checked[index];
-        updateXP(-xpPerCheck);
+        gameState.xp -= xpPerCheck;
+        if(gameState.xp < 0) gameState.xp = 0;
     } else {
-        el.classList.add('active');
+        // Marcar
         gameState.checked[index] = true;
-        updateXP(xpPerCheck);
-        checkAchievements(index); // Verifica conquista ao clicar
+        gameState.xp += xpPerCheck;
+        checkAchievements(index);
     }
-    saveGameData();
-}
-
-function updateXP(amount) {
-    gameState.xp += amount;
-    if (gameState.xp < 0) gameState.xp = 0;
+    
+    // Checa Level UP
     if (gameState.xp >= xpToNextLevel) {
         gameState.level++;
         gameState.xp -= xpToNextLevel;
-        showToast('ph-arrow-fat-up', 'LEVEL UP!', `Nível ${gameState.level} alcançado!`);
+        showToast('ph-arrow-fat-up', 'LEVEL UP!', `Nível ${gameState.level}!`);
         unlockAchievement('level_2');
     }
-    renderUI();
+
+    // Salva na nuvem (a função onSnapshot vai atualizar a tela depois)
+    saveGameData(); 
+    // Renderizamos imediatamente para resposta rápida visual
+    el.classList.toggle('active'); 
+    levelDisplay.innerText = gameState.level;
+    xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
+    progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 }
 
-// ==========================================
-// 3. CONQUISTAS (Com Correção de Erros)
-// ==========================================
 
+// ==========================================
+// 3. CONQUISTAS
+// ==========================================
 function checkAllAchievements() {
-    // Verifica tudo de uma vez (útil para contas antigas)
-    Object.keys(gameState.checked).forEach(idx => checkAchievements(parseInt(idx)));
+    if(gameState.checked) Object.keys(gameState.checked).forEach(idx => checkAchievements(parseInt(idx)));
 }
 
 function checkAchievements(lastIndex) {
-    // Garante que o array existe antes de tentar usar
     if (!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
-
-    unlockAchievement('first_step'); // Desbloqueia no primeiro clique
-    
+    unlockAchievement('first_step');
     if (Object.keys(gameState.checked).length >= 10) unlockAchievement('dedicated');
-
-    // Índices baseados nas 5 linhas de 7 dias (0-34)
     if (lastIndex >= 0 && lastIndex <= 6) unlockAchievement('gym_rat');
     if (lastIndex >= 7 && lastIndex <= 13) unlockAchievement('diet_master');
     if (lastIndex >= 14 && lastIndex <= 20) unlockAchievement('bookworm');
@@ -189,49 +273,31 @@ function checkAchievements(lastIndex) {
 }
 
 function unlockAchievement(id) {
-    // Proteção extra contra erro de dados
     if (!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
-
-    if (gameState.unlockedAchievements.includes(id)) return; // Já tem
-
+    if (gameState.unlockedAchievements.includes(id)) return;
+    
     const achievement = achievementsList.find(a => a.id === id);
     if (achievement) {
         gameState.unlockedAchievements.push(id);
-        saveGameData();
-        showToast(achievement.icon, 'Conquista Desbloqueada!', achievement.title);
-        
-        // Atualiza a tela se estiver aberta
+        saveGameData(); // Salva conquista
+        showToast(achievement.icon, 'Conquista!', achievement.title);
         if (achievementsScreen.classList.contains('active')) renderAchievements();
     }
 }
 
 function showToast(icon, title, msg) {
-    if(!toastContainer) return console.log("Erro: Toast container não achado");
-    
+    if(!toastContainer) return;
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.innerHTML = `<i class="ph ${icon}"></i><div class="toast-content"><h4>${title}</h4><p>${msg}</p></div>`;
-    
+    toast.innerHTML = `<i class="ph ${icon}"></i><div><h4>${title}</h4><p>${msg}</p></div>`;
     toastContainer.appendChild(toast);
-    
-    // Animação
-    setTimeout(() => {
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateX(0)';
-    }, 10);
-
-    // Remover
-    setTimeout(() => { 
-        toast.style.opacity = '0'; 
-        setTimeout(() => toast.remove(), 500); 
-    }, 4000);
+    setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(0)'; }, 10);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 4000);
 }
 
 function renderAchievements() {
     achievementsListEl.innerHTML = '';
-    // Proteção extra
     const unlocked = gameState.unlockedAchievements || [];
-    
     achievementsList.forEach(ach => {
         const isUnlocked = unlocked.includes(ach.id);
         const card = document.createElement('div');
@@ -241,41 +307,20 @@ function renderAchievements() {
     });
 }
 
-// MENU EVENTS
-document.getElementById('menu-achievements').addEventListener('click', (e) => {
-    e.preventDefault();
-    renderAchievements();
-    achievementsScreen.classList.remove('hidden');
-    setTimeout(() => achievementsScreen.classList.add('active'), 10);
+// Menus
+document.getElementById('menu-achievements').addEventListener('click', (e) => { e.preventDefault(); renderAchievements(); achievementsScreen.classList.remove('hidden'); setTimeout(() => achievementsScreen.classList.add('active'), 10); });
+document.getElementById('close-achievements').addEventListener('click', () => { achievementsScreen.classList.remove('active'); setTimeout(() => achievementsScreen.classList.add('hidden'), 300); });
+document.getElementById('menu-dashboard').addEventListener('click', () => { achievementsScreen.classList.remove('active'); setTimeout(() => achievementsScreen.classList.add('hidden'), 300); });
+document.getElementById('reset-btn').addEventListener('click', () => { 
+    if(confirm("Nova semana?")) { 
+        gameState.checked = {}; 
+        saveGameData(); 
+    } 
 });
 
-document.getElementById('close-achievements').addEventListener('click', () => {
-    achievementsScreen.classList.remove('active');
-    setTimeout(() => achievementsScreen.classList.add('hidden'), 300);
-});
-
-document.getElementById('menu-dashboard').addEventListener('click', () => {
-    achievementsScreen.classList.remove('active');
-    setTimeout(() => achievementsScreen.classList.add('hidden'), 300);
-});
-
-document.getElementById('reset-btn').addEventListener('click', () => {
-    if(confirm("Começar nova semana?")) { gameState.checked = {}; saveGameData(); location.reload(); }
-});
-
-// Inicialização
+// PWA e Gráficos
 if(document.getElementById('productivityChart')) {
-    new Chart(document.getElementById('productivityChart'), {
-        type: 'line',
-        data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [3,5,2,6,4,7,5], borderColor: '#ff2e4d', backgroundColor: 'rgba(255,46,77,0.1)', fill: true, tension: 0.4 }] },
-        options: { plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'#27272a'}}} }
-    });
-    new Chart(document.getElementById('moodChart'), {
-        type: 'bar',
-        data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [7,6,8,5,7,9,8], backgroundColor: '#27272a', hoverBackgroundColor: '#ff2e4d', borderRadius: 4 }] },
-        options: { plugins:{legend:false}, scales:{x:{display:false}, y:{display:false}} }
-    });
+    new Chart(document.getElementById('productivityChart'), { type: 'line', data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [3,5,2,6,4,7,5], borderColor: '#ff2e4d', backgroundColor: 'rgba(255,46,77,0.1)', fill: true, tension: 0.4 }] }, options: { plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'#27272a'}}} } });
+    new Chart(document.getElementById('moodChart'), { type: 'bar', data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [7,6,8,5,7,9,8], backgroundColor: '#27272a', hoverBackgroundColor: '#ff2e4d', borderRadius: 4 }] }, options: { plugins:{legend:false}, scales:{x:{display:false}, y:{display:false}} } });
 }
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); }
-
-initAuth();
