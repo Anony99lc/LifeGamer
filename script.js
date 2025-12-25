@@ -348,6 +348,68 @@ if(moodCanvas) {
 }
 
 // Registro do Service Worker (PWA)
+// ==========================================
+// 3. INICIALIZAÇÃO DE GRÁFICOS E PWA
+// ==========================================
+
+// Configuração do Gráfico de Produtividade
+// Espera a página carregar para garantir que o elemento existe
+document.addEventListener('DOMContentLoaded', () => {
+    const chartCanvas = document.getElementById('productivityChart');
+    if(chartCanvas) {
+        const ctxProd = chartCanvas.getContext('2d');
+        productivityChart = new Chart(ctxProd, { 
+            type: 'line', 
+            data: { 
+                labels: ['S','T','Q','Q','S','S','D'], 
+                datasets: [{ 
+                    data: [0,0,0,0,0,0,0], 
+                    borderColor: '#ff2e4d', 
+                    backgroundColor: 'rgba(255,46,77,0.1)', 
+                    fill: true, 
+                    tension: 0.4 
+                }] 
+            }, 
+            options: { 
+                plugins:{legend:false}, 
+                scales:{
+                    x:{display:false}, 
+                    y:{
+                        beginAtZero: true, 
+                        suggestedMax: 5,
+                        grid:{color:'#27272a'}
+                    }
+                } 
+            } 
+        });
+        // Atualiza logo de cara para pegar os dados atuais
+        updateProductivityChart();
+    }
+
+    // Configuração do Gráfico de Humor (Visual apenas)
+    const moodCanvas = document.getElementById('moodChart');
+    if(moodCanvas) {
+        const ctxMood = moodCanvas.getContext('2d');
+        new Chart(ctxMood, { 
+            type: 'bar', 
+            data: { 
+                labels: ['S','T','Q','Q','S','S','D'], 
+                datasets: [{ 
+                    data: [7,6,8,5,7,9,8], 
+                    backgroundColor: '#27272a', 
+                    hoverBackgroundColor: '#ff2e4d', 
+                    borderRadius: 4 
+                }] 
+            }, 
+            options: { 
+                plugins:{legend:false}, 
+                scales:{x:{display:false}, y:{display:false}} 
+            } 
+        });
+    }
+});
+
+// Registro do Service Worker (PWA)
 if ('serviceWorker' in navigator) { 
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); 
 }
