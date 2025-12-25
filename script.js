@@ -20,11 +20,6 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Tenta ativar o modo offline
-db.enablePersistence().catch(err => {
-    console.log("Persistência offline:", err.code);
-});
-
 // ==========================================
 // CONFIGURAÇÃO DO JOGO
 // ==========================================
