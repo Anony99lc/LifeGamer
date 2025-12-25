@@ -184,65 +184,65 @@ function renderUI() {
 }
 
 function toggleCheck(el, index) {
-    // 1. Bloqueio de dias futuros/passados
-    if (el.classList.contains('locked')) return alert("🔒 Hoje não é esse dia!");
-    
-    // 2. Lógica Visual e de Dados (Tudo junto para ser instantâneo)
-    if (gameState.checked[index]) {
-        // --- DESMARCAR ---
-        delete gameState.checked[index]; // Remove dos dados
-        gameState.xp -= xpPerCheck;      // Tira XP
-        if(gameState.xp < 0) gameState.xp = 0;
-        
-        el.classList.remove('active');   // <--- FORÇA VISUAL: Tira o vermelho AGORA
-    } else {
-        // --- MARCAR ---
-        gameState.checked[index] = true; // Adiciona aos dados
-        gameState.xp += xpPerCheck;      // Dá XP
-        checkAchievements(index);
-        
-        el.classList.add('active');      // <--- FORÇA VISUAL: Põe o vermelho AGORA
+    // 1. Verifica se o dia está bloqueado (Cadeado)
+    if (el.classList.contains('locked')) {
+        return alert("🔒 Você só pode alterar o dia de hoje!");
     }
     
-    // 3. Level Up e Atualização de Texto
+    // 2. Tira a prova real: Está marcado na tela?
+    const isVisuallyActive = el.classList.contains('active');
+
+    if (isVisuallyActive) {
+        // --- ESTÁ MARCADO -> VAMOS DESMARCAR ---
+        
+        // Remove do visual imediatamente
+        el.classList.remove('active');
+        
+        // Remove dos dados
+        if(gameState.checked) delete gameState.checked[index];
+        
+        // Diminui XP
+        gameState.xp -= xpPerCheck;
+        if(gameState.xp < 0) gameState.xp = 0;
+
+    } else {
+        // --- ESTÁ DESMARCADO -> VAMOS MARCAR ---
+        
+        // Adiciona ao visual imediatamente
+        el.classList.add('active');
+        
+        // Salva nos dados
+        if(!gameState.checked) gameState.checked = {};
+        gameState.checked[index] = true;
+        
+        // Aumenta XP
+        gameState.xp += xpPerCheck;
+        checkAchievements(index);
+    }
+    
+    // 3. Atualiza Nível e Barra (Lógica Comum)
     if (gameState.xp >= xpToNextLevel) {
         gameState.level++;
         gameState.xp -= xpToNextLevel;
+        
+        // Toca o som se ele existir
+        if(typeof levelUpSound !== 'undefined') {
+            levelUpSound.play().catch(e => console.log("Sem som"));
+        }
+
         showToast('ph-arrow-fat-up', 'LEVEL UP!', `Nível ${gameState.level}!`);
         unlockAchievement('level_2');
     }
 
-    // Atualiza os números na tela
+    // Atualiza textos
     levelDisplay.innerText = gameState.level;
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 
-    // 4. Atualiza o gráfico de linha imediatamente
+    // Atualiza gráfico e salva
     updateProductivityChart();
-
-    // 5. Salva no Banco de Dados (Silenciosamente)
     saveGameData(); 
 }
-
-function updateProductivityChart() {
-    // 1. Zera os contadores (Seg a Dom)
-    let dayCounts = [0, 0, 0, 0, 0, 0, 0]; 
-
-    // 2. Conta quantos checks existem em cada dia
-    if (gameState.checked) {
-        Object.keys(gameState.checked).forEach(index => {
-            const colIndex = parseInt(index) % 7; // Descobre a coluna (0=Seg, 6=Dom)
-            dayCounts[colIndex]++; // Soma +1 naquele dia
-        });
-    }
-
-    // 3. Atualiza o gráfico se ele já existir
-    if (productivityChart) {
-        productivityChart.data.datasets[0].data = dayCounts;
-        productivityChart.update();
-    }
-}
-
 // ... (Funções de Conquista) ...
 function checkAllAchievements() { if(gameState.checked) Object.keys(gameState.checked).forEach(idx => checkAchievements(parseInt(idx))); }
 function checkAchievements(lastIndex) {
