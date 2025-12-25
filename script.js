@@ -184,20 +184,27 @@ function renderUI() {
 }
 
 function toggleCheck(el, index) {
+    // 1. Bloqueio de dias futuros/passados
     if (el.classList.contains('locked')) return alert("🔒 Hoje não é esse dia!");
     
-    // Lógica Matemática
+    // 2. Lógica Visual e de Dados (Tudo junto para ser instantâneo)
     if (gameState.checked[index]) {
-        delete gameState.checked[index];
-        gameState.xp -= xpPerCheck;
+        // --- DESMARCAR ---
+        delete gameState.checked[index]; // Remove dos dados
+        gameState.xp -= xpPerCheck;      // Tira XP
         if(gameState.xp < 0) gameState.xp = 0;
+        
+        el.classList.remove('active');   // <--- FORÇA VISUAL: Tira o vermelho AGORA
     } else {
-        gameState.checked[index] = true;
-        gameState.xp += xpPerCheck;
+        // --- MARCAR ---
+        gameState.checked[index] = true; // Adiciona aos dados
+        gameState.xp += xpPerCheck;      // Dá XP
         checkAchievements(index);
+        
+        el.classList.add('active');      // <--- FORÇA VISUAL: Põe o vermelho AGORA
     }
     
-    // Level Up
+    // 3. Level Up e Atualização de Texto
     if (gameState.xp >= xpToNextLevel) {
         gameState.level++;
         gameState.xp -= xpToNextLevel;
@@ -205,7 +212,15 @@ function toggleCheck(el, index) {
         unlockAchievement('level_2');
     }
 
-    // Salva no banco (O renderUI será chamado automaticamente pelo onSnapshot)
+    // Atualiza os números na tela
+    levelDisplay.innerText = gameState.level;
+    xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
+    progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
+
+    // 4. Atualiza o gráfico de linha imediatamente
+    updateProductivityChart();
+
+    // 5. Salva no Banco de Dados (Silenciosamente)
     saveGameData(); 
 }
 
