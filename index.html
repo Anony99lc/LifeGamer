@@ -15,6 +15,7 @@
     <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
+
     <div id="toast-container" class="toast-container"></div>
 
     <div id="auth-screen" class="auth-screen">
@@ -29,15 +30,15 @@
             <div class="divider"><span>OU</span></div>
 
             <div id="login-form" class="auth-box">
-                <div class="input-group"><input type="text" id="login-user" placeholder="Usuário"></div>
+                <div class="input-group"><input type="text" id="login-user" placeholder="Email"></div>
                 <div class="input-group"><input type="password" id="login-pass" placeholder="Senha"></div>
                 <button id="btn-login" class="auth-btn">ENTRAR</button>
                 <p class="switch-text">Sem conta? <span id="link-to-register">Cadastrar</span></p>
             </div>
 
             <div id="register-form" class="auth-box hidden">
-                <div class="input-group"><input type="text" id="reg-user" placeholder="Novo Nick"></div>
-                <div class="input-group"><input type="password" id="reg-pass" placeholder="Nova Senha"></div>
+                <div class="input-group"><input type="text" id="reg-user" placeholder="Seu Email"></div>
+                <div class="input-group"><input type="password" id="reg-pass" placeholder="Crie uma Senha"></div>
                 <button id="btn-register" class="auth-btn outline">CADASTRAR</button>
                 <p class="switch-text">Já tem conta? <span id="link-to-login">Login</span></p>
             </div>
@@ -97,7 +98,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
     <script src="script.js"></script>
 </body>
 </html>
