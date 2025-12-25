@@ -1,4 +1,4 @@
-CACHE_NAME = "gamer-life-v-FINAL-SYNC";
+CACHE_NAME = "gamer-life-v30-SYNC-FORCE";
 const ASSETS = [
   "./",
   "./index.html",
