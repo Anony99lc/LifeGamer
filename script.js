@@ -1,5 +1,5 @@
 // ==========================================
-//  CONFIGURAÇÃO FIREBASE
+//  CONFIGURAÇÃO FIREBASE (GamerLife V2)
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyDmnIt0JFWMhWhsgKFjc9YWXgbPtUJmoLs",
@@ -9,14 +9,12 @@ const firebaseConfig = {
     messagingSenderId: "1099149362318",
     appId: "1:1099149362318:web:3611a4d37ec95b886335df"
 };
-// Nota: Não escreva nada além disso dentro das chaves { }
 
-// Inicializa Firebase (Verifica se já não foi iniciado antes)
+// Inicializa Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Configura as variáveis de acesso
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -40,7 +38,7 @@ const achievementsScreen = document.getElementById('achievements-screen');
 const achievementsListEl = document.getElementById('achievements-list');
 const toastContainer = document.getElementById('toast-container');
 
-// Dados
+// Dados de Conquistas
 const achievementsList = [
     { id: 'first_step', icon: 'ph-footprints', title: 'Primeiro Passo', desc: 'Marque seu primeiro hábito.' },
     { id: 'gym_rat', icon: 'ph-barbell', title: 'Rato de Academia', desc: 'Complete um treino.' },
@@ -53,110 +51,78 @@ const achievementsList = [
 ];
 
 let currentUser = null;
-// Estado padrão
 let gameState = { xp: 0, level: 1, checked: {}, unlockedAchievements: [] };
-// Para cancelar o "espião" do banco de dados ao sair
 let unsubscribe = null; 
 
 // ==========================================
-// 1. SISTEMA DE AUTENTICAÇÃO (REAL)
+// 1. SISTEMA DE LOGIN
 // ==========================================
-
-// Monitora se o usuário entrou ou saiu (Ouve o Firebase)
 auth.onAuthStateChanged((user) => {
     if (user) {
-        // Usuário entrou
         currentUser = user;
         startGame(user);
     } else {
-        // Usuário saiu
         currentUser = null;
         authScreen.classList.remove('hidden');
         authScreen.style.opacity = '1';
-        if(unsubscribe) unsubscribe(); // Para de ouvir o banco de dados
+        if(unsubscribe) unsubscribe();
     }
 });
 
-// Login com Google
 document.getElementById('btn-google').addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).catch(error => alert("Erro Google: " + error.message));
 });
 
-// Login com Email/Senha (Firebase Real)
 document.getElementById('btn-login').addEventListener('click', () => {
-    const email = document.getElementById('login-user').value.trim(); // Agora pede email
+    const email = document.getElementById('login-user').value.trim();
     const pass = document.getElementById('login-pass').value.trim();
     auth.signInWithEmailAndPassword(email, pass).catch(error => alert("Erro: " + error.message));
 });
 
-// Cadastro com Email/Senha (Firebase Real)
 document.getElementById('btn-register').addEventListener('click', () => {
-    const email = document.getElementById('reg-user').value.trim(); // Agora pede email
+    const email = document.getElementById('reg-user').value.trim();
     const pass = document.getElementById('reg-pass').value.trim();
-    
     auth.createUserWithEmailAndPassword(email, pass)
-        .then(() => {
-            alert("Conta criada! Você já está logado.");
-            // O onAuthStateChanged vai lidar com o resto
-        })
+        .then(() => alert("Conta criada!"))
         .catch(error => alert("Erro ao criar: " + error.message));
 });
 
-// Logout
-document.getElementById('logout-btn').addEventListener('click', () => { 
-    auth.signOut();
-    location.reload(); 
-});
-
-// Alternar Telas
-document.getElementById('link-to-register').addEventListener('click', () => { 
-    loginForm.classList.add('hidden'); 
-    registerForm.classList.remove('hidden'); 
-    // Muda os placeholders para Email
-    document.getElementById('reg-user').placeholder = "Seu Email";
-});
-document.getElementById('link-to-login').addEventListener('click', () => { 
-    registerForm.classList.add('hidden'); 
-    loginForm.classList.remove('hidden'); 
-    document.getElementById('login-user').placeholder = "Seu Email";
-});
-
+document.getElementById('logout-btn').addEventListener('click', () => { auth.signOut(); location.reload(); });
+document.getElementById('link-to-register').addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
+document.getElementById('link-to-login').addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
 
 // ==========================================
-// 2. LÓGICA DO JOGO (COM BANCO DE DADOS)
+// 2. LÓGICA DO JOGO
 // ==========================================
 
 function startGame(user) {
-    // Define nome e foto
     playerDisplay.innerText = user.displayName || user.email.split('@')[0];
-    if(user.photoURL) {
-        userAvatar.innerHTML = `<img src="${user.photoURL}" alt="Avatar">`;
-    } else {
-        userAvatar.innerHTML = `<i class="ph ph-user"></i>`;
-    }
+    if(user.photoURL) userAvatar.innerHTML = `<img src="${user.photoURL}" alt="Avatar">`;
+    else userAvatar.innerHTML = `<i class="ph ph-user"></i>`;
 
-    // Esconde tela de login
     authScreen.style.opacity = '0';
     setTimeout(() => authScreen.classList.add('hidden'), 500);
 
-    // LIGA O "ESPIÃO" DO BANCO DE DADOS (REALTIME)
-    // Se você mudar algo no celular, o PC atualiza sozinho!
+    // --- CONEXÃO COM O BANCO ---
     const docRef = db.collection('users').doc(user.uid);
 
     unsubscribe = docRef.onSnapshot((doc) => {
         if (doc.exists) {
-            // Carrega dados da nuvem
+            // !!! O ALARME ESPIÃO !!!
+            // Se aparecer no celular, a conexão está perfeita!
+            console.log("Recebi dados novos!"); 
+            
             gameState = doc.data();
             
-            // Correção de bugs antigos
+            // Correções de segurança
             if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
             if(!gameState.checked) gameState.checked = {};
-            
-            checkAllAchievements(); // Verifica conquistas retroativas
+
+            checkAllAchievements();
             renderUI();
         } else {
-            // Se é o primeiro acesso, cria o documento no banco
+            // Cria conta nova se não existir
             const initialData = { xp: 0, level: 1, checked: {}, unlockedAchievements: [] };
             docRef.set(initialData);
             gameState = initialData;
@@ -166,7 +132,6 @@ function startGame(user) {
 }
 
 function saveGameData() {
-    // Salva na Nuvem (Cloud Firestore)
     if(currentUser) {
         db.collection('users').doc(currentUser.uid).set(gameState, { merge: true })
         .catch(err => console.error("Erro ao salvar:", err));
@@ -174,9 +139,8 @@ function saveGameData() {
 }
 
 function renderUI() {
-    // Versão Limpa (Sem o ID entre parênteses)
+    // Visual limpo novamente
     levelDisplay.innerText = gameState.level;
-    
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 
@@ -206,18 +170,15 @@ function toggleCheck(el, index) {
     if (el.classList.contains('locked')) return alert("🔒 Hoje não é esse dia!");
     
     if (el.classList.contains('active')) {
-        // Desmarcar
         delete gameState.checked[index];
         gameState.xp -= xpPerCheck;
         if(gameState.xp < 0) gameState.xp = 0;
     } else {
-        // Marcar
         gameState.checked[index] = true;
         gameState.xp += xpPerCheck;
         checkAchievements(index);
     }
     
-    // Checa Level UP
     if (gameState.xp >= xpToNextLevel) {
         gameState.level++;
         gameState.xp -= xpToNextLevel;
@@ -225,23 +186,16 @@ function toggleCheck(el, index) {
         unlockAchievement('level_2');
     }
 
-    // Salva na nuvem (a função onSnapshot vai atualizar a tela depois)
     saveGameData(); 
-    // Renderizamos imediatamente para resposta rápida visual
+    // Renderização visual imediata
     el.classList.toggle('active'); 
     levelDisplay.innerText = gameState.level;
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 }
 
-
-// ==========================================
-// 3. CONQUISTAS
-// ==========================================
-function checkAllAchievements() {
-    if(gameState.checked) Object.keys(gameState.checked).forEach(idx => checkAchievements(parseInt(idx)));
-}
-
+// ... (Resto das funções de Conquista igual ao anterior) ...
+function checkAllAchievements() { if(gameState.checked) Object.keys(gameState.checked).forEach(idx => checkAchievements(parseInt(idx))); }
 function checkAchievements(lastIndex) {
     if (!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
     unlockAchievement('first_step');
@@ -252,20 +206,17 @@ function checkAchievements(lastIndex) {
     if (lastIndex >= 21 && lastIndex <= 27) unlockAchievement('early_bird');
     if (lastIndex >= 28 && lastIndex <= 34) unlockAchievement('hydrated');
 }
-
 function unlockAchievement(id) {
     if (!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
     if (gameState.unlockedAchievements.includes(id)) return;
-    
     const achievement = achievementsList.find(a => a.id === id);
     if (achievement) {
         gameState.unlockedAchievements.push(id);
-        saveGameData(); // Salva conquista
+        saveGameData(); 
         showToast(achievement.icon, 'Conquista!', achievement.title);
         if (achievementsScreen.classList.contains('active')) renderAchievements();
     }
 }
-
 function showToast(icon, title, msg) {
     if(!toastContainer) return;
     const toast = document.createElement('div');
@@ -275,7 +226,6 @@ function showToast(icon, title, msg) {
     setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(0)'; }, 10);
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 4000);
 }
-
 function renderAchievements() {
     achievementsListEl.innerHTML = '';
     const unlocked = gameState.unlockedAchievements || [];
@@ -287,21 +237,9 @@ function renderAchievements() {
         achievementsListEl.appendChild(card);
     });
 }
-
-// Menus
 document.getElementById('menu-achievements').addEventListener('click', (e) => { e.preventDefault(); renderAchievements(); achievementsScreen.classList.remove('hidden'); setTimeout(() => achievementsScreen.classList.add('active'), 10); });
 document.getElementById('close-achievements').addEventListener('click', () => { achievementsScreen.classList.remove('active'); setTimeout(() => achievementsScreen.classList.add('hidden'), 300); });
 document.getElementById('menu-dashboard').addEventListener('click', () => { achievementsScreen.classList.remove('active'); setTimeout(() => achievementsScreen.classList.add('hidden'), 300); });
-document.getElementById('reset-btn').addEventListener('click', () => { 
-    if(confirm("Nova semana?")) { 
-        gameState.checked = {}; 
-        saveGameData(); 
-    } 
-});
+document.getElementById('reset-btn').addEventListener('click', () => { if(confirm("Nova semana?")) { gameState.checked = {}; saveGameData(); } });
 
-// PWA e Gráficos
-if(document.getElementById('productivityChart')) {
-    new Chart(document.getElementById('productivityChart'), { type: 'line', data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [3,5,2,6,4,7,5], borderColor: '#ff2e4d', backgroundColor: 'rgba(255,46,77,0.1)', fill: true, tension: 0.4 }] }, options: { plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'#27272a'}}} } });
-    new Chart(document.getElementById('moodChart'), { type: 'bar', data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [7,6,8,5,7,9,8], backgroundColor: '#27272a', hoverBackgroundColor: '#ff2e4d', borderRadius: 4 }] }, options: { plugins:{legend:false}, scales:{x:{display:false}, y:{display:false}} } });
-}
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); }
