@@ -89,6 +89,17 @@ function loadGameData() {
     if (data) { 
         gameState = { ...gameState, ...data };
         if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
+        if (data) {
+        gameState = { ...gameState, ...data };
+        if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
+    
+    // NOVO: Verifica conquistas antigas automaticamente
+    Object.keys(gameState.checked).forEach(index => {
+        checkAchievements(parseInt(index));
+    });
+
+    renderUI();
+}
         renderUI();
     }
 }
