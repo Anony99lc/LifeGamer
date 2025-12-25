@@ -413,3 +413,65 @@ document.addEventListener('DOMContentLoaded', () => {
 if ('serviceWorker' in navigator) { 
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); 
 }
+// ==========================================
+// 3. INICIALIZAÇÃO DE GRÁFICOS E PWA (Cole isto no FINAL do arquivo)
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Inicia o Gráfico de Produtividade
+    const chartCanvas = document.getElementById('productivityChart');
+    if(chartCanvas) {
+        const ctxProd = chartCanvas.getContext('2d');
+        
+        // Cria o gráfico e guarda na variável global
+        productivityChart = new Chart(ctxProd, { 
+            type: 'line', 
+            data: { 
+                labels: ['S','T','Q','Q','S','S','D'], 
+                datasets: [{ 
+                    data: [0,0,0,0,0,0,0], 
+                    borderColor: '#ff2e4d', 
+                    backgroundColor: 'rgba(255,46,77,0.1)', 
+                    fill: true, 
+                    tension: 0.4 
+                }] 
+            }, 
+            options: { 
+                plugins:{legend:false}, 
+                scales:{
+                    x:{display:false}, 
+                    y:{
+                        beginAtZero: true, 
+                        suggestedMax: 5, 
+                        grid:{color:'#27272a'}
+                    }
+                } 
+            } 
+        });
+        
+        // Força a primeira atualização após 0.5s para garantir que os dados chegaram
+        setTimeout(updateProductivityChart, 500);
+    }
+
+    // 2. Inicia o Gráfico de Humor (Visual apenas)
+    const moodCanvas = document.getElementById('moodChart');
+    if(moodCanvas) {
+        const ctxMood = moodCanvas.getContext('2d');
+        new Chart(ctxMood, { 
+            type: 'bar', 
+            data: { 
+                labels: ['S','T','Q','Q','S','S','D'], 
+                datasets: [{ 
+                    data: [7,6,8,5,7,9,8], 
+                    backgroundColor: '#27272a', 
+                    hoverBackgroundColor: '#ff2e4d', 
+                    borderRadius: 4 
+                }] 
+            }, 
+            options: { 
+                plugins:{legend:false}, 
+                scales:{x:{display:false}, y:{display:false}} 
+            } 
+        });
+    }
+});
