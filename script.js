@@ -2,37 +2,43 @@
 const xpPerCheck = 15;
 const xpToNextLevel = 1000;
 
-// Elementos
+// Elementos Auth
 const authScreen = document.getElementById('auth-screen');
 const loginForm = document.getElementById('login-form');
 const registerForm = document.getElementById('register-form');
 const playerDisplay = document.getElementById('player-name');
+
+// Elementos Jogo
 const levelDisplay = document.getElementById('level-display');
 const xpDisplay = document.getElementById('xp-display');
 const progressBar = document.querySelector('.progress-bar-fill');
 const checks = document.querySelectorAll('.check');
 
-// Modal de Conquistas
+// Conquistas
 const achievementsScreen = document.getElementById('achievements-screen');
 const achievementsListEl = document.getElementById('achievements-list');
 const toastContainer = document.getElementById('toast-container');
 
-// --- LISTA DE CONQUISTAS ---
+// LISTA DE CONQUISTAS
 const achievementsList = [
     { id: 'first_step', icon: 'ph-footprints', title: 'Primeiro Passo', desc: 'Marque seu primeiro hábito.' },
     { id: 'gym_rat', icon: 'ph-barbell', title: 'Rato de Academia', desc: 'Complete um treino.' },
-    { id: 'bookworm', icon: 'ph-book-open', title: 'Leitor Voraz', desc: 'Leia algumas páginas.' },
-    { id: 'hydrated', icon: 'ph-drop', title: 'Hidratado', desc: 'Beba seus 4L de água.' },
-    { id: 'early_bird', icon: 'ph-sun', title: 'Madrugador', desc: 'Acorde às 06h.' },
-    { id: 'dedicated', icon: 'ph-star', title: 'Dedicado', desc: 'Marque 10 tarefas no total.' },
-    { id: 'level_2', icon: 'ph-arrow-fat-up', title: 'Level Up', desc: 'Chegue ao Nível 2.' }
+    { id: 'diet_master', icon: 'ph-apple', title: 'Mestre da Dieta', desc: 'Fez a dieta corretamente.' },
+    { id: 'bookworm', icon: 'ph-book-open', title: 'Leitor Voraz', desc: 'Leu algumas páginas.' },
+    { id: 'early_bird', icon: 'ph-sun', title: 'Madrugador', desc: 'Acordou cedo.' },
+    { id: 'hydrated', icon: 'ph-drop', title: 'Hidratado', desc: 'Bebeu 4L de água.' },
+    { id: 'dedicated', icon: 'ph-star', title: 'Dedicado', desc: 'Marcou 10 tarefas no total.' },
+    { id: 'level_2', icon: 'ph-arrow-fat-up', title: 'Level Up', desc: 'Chegou ao Nível 2.' }
 ];
 
 // Estado Inicial
 let currentUser = null;
 let gameState = { xp: 0, level: 1, checked: {}, unlockedAchievements: [] };
 
-// --- SISTEMA DE LOGIN/AUTH ---
+// ==========================================
+// 1. SISTEMA DE LOGIN E CADASTRO
+// ==========================================
+
 document.getElementById('link-to-register').addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
 document.getElementById('link-to-login').addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
 
@@ -46,6 +52,7 @@ document.getElementById('btn-login').addEventListener('click', () => {
     const user = document.getElementById('login-user').value.trim();
     const pass = document.getElementById('login-pass').value.trim();
     const storedData = localStorage.getItem(`user_data_${user}`);
+    
     if (!storedData) return alert("Usuário não encontrado!");
     if (JSON.parse(storedData).password === pass) { localStorage.setItem('gamer_session_user', user); startGame(user); }
     else { alert("Senha incorreta!"); }
@@ -65,7 +72,10 @@ document.getElementById('btn-register').addEventListener('click', () => {
 
 document.getElementById('logout-btn').addEventListener('click', () => { localStorage.removeItem('gamer_session_user'); location.reload(); });
 
-// --- LÓGICA DO JOGO ---
+// ==========================================
+// 2. LÓGICA DO JOGO
+// ==========================================
+
 function startGame(user) {
     currentUser = user;
     playerDisplay.innerText = user;
@@ -77,7 +87,7 @@ function startGame(user) {
 function loadGameData() {
     const data = JSON.parse(localStorage.getItem(`user_data_${currentUser}`));
     if (data) { 
-        gameState = { ...gameState, ...data }; // Merge para garantir que novos campos existam
+        gameState = { ...gameState, ...data };
         if(!gameState.unlockedAchievements) gameState.unlockedAchievements = [];
         renderUI();
     }
@@ -97,15 +107,26 @@ function renderUI() {
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 
+    // LÓGICA DO CADEADO (DIAS)
     const date = new Date();
-    const todayIndex = (date.getDay() === 0) ? 6 : date.getDay() - 1;
+    const jsDay = date.getDay(); // 0(Dom) a 6(Sáb)
+    const todayIndex = (jsDay === 0) ? 6 : jsDay - 1; // 0(Seg) a 6(Dom)
 
     checks.forEach((check, index) => {
+        // Clona para limpar eventos antigos
         const newCheck = check.cloneNode(true);
         check.parentNode.replaceChild(newCheck, check);
         
-        const colIndex = index % 7;
-        if (colIndex !== todayIndex) { newCheck.classList.add('locked'); newCheck.title = "Apenas hoje!"; }
+        const colIndex = index % 7; // Qual coluna é?
+        
+        // Bloqueia se não for hoje
+        if (colIndex !== todayIndex) { 
+            newCheck.classList.add('locked'); 
+            newCheck.title = "Apenas o dia de hoje está liberado!"; 
+        } else {
+            newCheck.classList.remove('locked');
+        }
+
         if (gameState.checked[index]) newCheck.classList.add('active');
         
         newCheck.addEventListener('click', () => toggleCheck(newCheck, index));
@@ -113,7 +134,7 @@ function renderUI() {
 }
 
 function toggleCheck(el, index) {
-    if (el.classList.contains('locked')) return alert("🔒 Dia bloqueado!");
+    if (el.classList.contains('locked')) return alert("🔒 Hoje não é esse dia! Volte no dia certo.");
     
     if (el.classList.contains('active')) {
         el.classList.remove('active');
@@ -123,7 +144,7 @@ function toggleCheck(el, index) {
         el.classList.add('active');
         gameState.checked[index] = true;
         updateXP(xpPerCheck);
-        checkAchievements(index); // Verifica conquistas ao marcar
+        checkAchievements(index); // Checa conquistas
     }
     saveGameData();
 }
@@ -134,123 +155,103 @@ function updateXP(amount) {
     if (gameState.xp >= xpToNextLevel) {
         gameState.level++;
         gameState.xp -= xpToNextLevel;
-        showToast('ph-arrow-fat-up', 'LEVEL UP!', `Você chegou ao nível ${gameState.level}!`);
-        unlockAchievement('level_2'); // Tenta desbloquear conquista de nível
+        showToast('ph-arrow-fat-up', 'LEVEL UP!', `Bem-vindo ao nível ${gameState.level}!`);
+        unlockAchievement('level_2');
     }
     renderUI();
 }
 
-// --- SISTEMA DE CONQUISTAS ATUALIZADO ---
+// ==========================================
+// 3. CONQUISTAS & NOTIFICAÇÕES
+// ==========================================
 
 function checkAchievements(lastIndex) {
-    // Garante que a lista de desbloqueados existe
-    if (!gameState.unlockedAchievements) {
-        gameState.unlockedAchievements = [];
-    }
-
-    // 1. Conquista: Primeiro Passo (Qualquer clique)
-    unlockAchievement('first_step');
-
-    // 2. Conquista: Dedicado (10 checks totais)
-    // Conta quantos 'true' existem no objeto checked
-    const totalChecks = Object.keys(gameState.checked).length;
-    if (totalChecks >= 10) unlockAchievement('dedicated');
-
-    // 3. Conquistas por Linha (Baseado no índice clicado)
-    // Linha 1 (Índices 0 a 6) -> Treino
-    if (lastIndex >= 0 && lastIndex <= 6) unlockAchievement('gym_rat');
+    unlockAchievement('first_step'); // Qualquer clique
     
-    // Linha 2 (Índices 7 a 13) -> Dieta
-    if (lastIndex >= 7 && lastIndex <= 13) unlockAchievement('dieta_focada'); // Verifique se o ID bate com sua lista
+    if (Object.keys(gameState.checked).length >= 10) unlockAchievement('dedicated');
 
-    // ... Adicione as outras linhas conforme sua lista
+    // Verifica linhas específicas (baseado na ordem do HTML)
+    if (lastIndex >= 0 && lastIndex <= 6) unlockAchievement('gym_rat');   // Linha 1: Treino
+    if (lastIndex >= 7 && lastIndex <= 13) unlockAchievement('diet_master'); // Linha 2: Dieta
+    if (lastIndex >= 14 && lastIndex <= 20) unlockAchievement('bookworm'); // Linha 3: Leitura
+    if (lastIndex >= 21 && lastIndex <= 27) unlockAchievement('early_bird'); // Linha 4: Acordar
+    if (lastIndex >= 28 && lastIndex <= 34) unlockAchievement('hydrated'); // Linha 5: Água
 }
 
 function unlockAchievement(id) {
-    // Se já tem essa conquista, para aqui (não mostra de novo)
-    if (gameState.unlockedAchievements.includes(id)) return;
+    if (gameState.unlockedAchievements.includes(id)) return; // Já tem
 
-    // Procura os dados da conquista na lista
     const achievement = achievementsList.find(a => a.id === id);
-    
-    // Se achou, desbloqueia e mostra
     if (achievement) {
         gameState.unlockedAchievements.push(id);
-        saveGameData(); // Salva imediatamente para não perder
-        
-        // Toca um som (Opcional - Browser pode bloquear se não houver interação antes)
-        // const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
-        // audio.play().catch(e => console.log("Som bloqueado pelo navegador"));
-
+        saveGameData();
         showToast(achievement.icon, 'Conquista Desbloqueada!', achievement.title);
         
-        // Se a tela de troféus estiver aberta, redesenha ela
-        if (achievementsScreen.classList.contains('active')) {
-            renderAchievements();
-        }
+        if (achievementsScreen.classList.contains('active')) renderAchievements();
     }
 }
 
 function showToast(icon, title, msg) {
-    const container = document.getElementById('toast-container');
-    
-    // Segurança: Se não achar o container, cria um na hora
-    if (!container) {
-        console.error("ERRO: <div id='toast-container'> não encontrado no HTML!");
-        return;
-    }
-
+    if(!toastContainer) return;
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.innerHTML = `
-        <i class="ph ${icon}" style="font-size: 24px; color: gold;"></i>
-        <div class="toast-content">
-            <h4 style="margin:0; font-size: 14px;">${title}</h4>
-            <p style="margin:0; font-size: 12px; color: #ccc;">${msg}</p>
-        </div>
-    `;
-
-    container.appendChild(toast);
-
-    // Animação de entrada
-    requestAnimationFrame(() => {
-        toast.style.transform = "translateX(0)";
-        toast.style.opacity = "1";
-    });
-
-    // Remove depois de 4 segundos
-    setTimeout(() => {
-        toast.style.opacity = "0";
-        setTimeout(() => toast.remove(), 500);
-    }, 4000);
+    toast.innerHTML = `<i class="ph ${icon}"></i><div class="toast-content"><h4>${title}</h4><p>${msg}</p></div>`;
+    toastContainer.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 4000);
 }
 
-// --- EVENTOS DO MENU (CORRIGIDO) ---
+function renderAchievements() {
+    achievementsListEl.innerHTML = '';
+    achievementsList.forEach(ach => {
+        const isUnlocked = gameState.unlockedAchievements.includes(ach.id);
+        const card = document.createElement('div');
+        card.className = `achievement-card ${isUnlocked ? 'unlocked' : ''}`;
+        card.innerHTML = `<i class="ph ${ach.icon}"></i><h4>${ach.title}</h4><p>${ach.desc}</p>`;
+        achievementsListEl.appendChild(card);
+    });
+}
 
+// Menu Conquistas
 document.getElementById('menu-achievements').addEventListener('click', (e) => {
     e.preventDefault();
-    renderAchievements(); // Desenha as conquistas
-    
-    // 1. Remove o "display: none"
+    renderAchievements();
     achievementsScreen.classList.remove('hidden');
-    
-    // 2. Espera 10ms para adicionar o efeito visual (Fade In)
-    setTimeout(() => {
-        achievementsScreen.classList.add('active');
-    }, 10);
+    setTimeout(() => achievementsScreen.classList.add('active'), 10);
 });
 
 document.getElementById('close-achievements').addEventListener('click', () => {
-    // 1. Remove o efeito visual (Fade Out)
     achievementsScreen.classList.remove('active');
-    
-    // 2. Espera a animação acabar (300ms) para esconder de vez
-    setTimeout(() => {
-        achievementsScreen.classList.add('hidden');
-    }, 300);
+    setTimeout(() => achievementsScreen.classList.add('hidden'), 300);
 });
 
 document.getElementById('menu-dashboard').addEventListener('click', () => {
     achievementsScreen.classList.remove('active');
     setTimeout(() => achievementsScreen.classList.add('hidden'), 300);
 });
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+    if(confirm("Começar nova semana?")) { gameState.checked = {}; saveGameData(); loadGameData(); }
+});
+
+// ==========================================
+// 4. INICIALIZAÇÃO
+// ==========================================
+
+// Charts
+if(document.getElementById('productivityChart')) {
+    new Chart(document.getElementById('productivityChart'), {
+        type: 'line',
+        data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [3,5,2,6,4,7,5], borderColor: '#ff2e4d', backgroundColor: 'rgba(255,46,77,0.1)', fill: true, tension: 0.4 }] },
+        options: { plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'#27272a'}}} }
+    });
+    new Chart(document.getElementById('moodChart'), {
+        type: 'bar',
+        data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [7,6,8,5,7,9,8], backgroundColor: '#27272a', hoverBackgroundColor: '#ff2e4d', borderRadius: 4 }] },
+        options: { plugins:{legend:false}, scales:{x:{display:false}, y:{display:false}} }
+    });
+}
+
+// PWA
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); }
+
+initAuth();
