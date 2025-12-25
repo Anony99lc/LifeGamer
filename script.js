@@ -139,28 +139,32 @@ function saveGameData() {
 }
 
 function renderUI() {
-    // 1. Atualiza os Textos
+    // 1. Atualiza os Textos de Nível e XP
     levelDisplay.innerText = gameState.level;
     xpDisplay.innerText = `${gameState.xp} / ${xpToNextLevel} XP`;
     progressBar.style.width = `${(gameState.xp / xpToNextLevel) * 100}%`;
 
-    // 2. Calcula o dia de hoje
+    // 2. Calcula o dia de hoje para bloquear os outros
     const date = new Date();
     const jsDay = date.getDay();
     const todayIndex = (jsDay === 0) ? 6 : jsDay - 1;
 
-    // 3. Pega os botões que estão NA TELA agora (Correção do erro)
+    // 3. PEGA OS BOTÕES REAIS QUE ESTÃO NA TELA AGORA
+    // (Isso corrige o bug de "cor não muda")
     const currentChecks = document.querySelectorAll('.check');
 
     currentChecks.forEach((check, index) => {
-        // A. Define se está marcado ou não (Sincronia Visual)
-        if (gameState.checked[index]) {
+        // A. Limpa qualquer clique antigo para não duplicar
+        check.onclick = null; 
+
+        // B. Define se está marcado (Vermelho) ou não (Cinza)
+        if (gameState.checked && gameState.checked[index]) {
             check.classList.add('active');
         } else {
             check.classList.remove('active');
         }
 
-        // B. Define se está bloqueado (Cadeado)
+        // C. Define se está bloqueado (Cadeado) ou liberado
         const colIndex = index % 7;
         if (colIndex !== todayIndex) { 
             check.classList.add('locked'); 
@@ -170,8 +174,10 @@ function renderUI() {
             check.title = "Clique para marcar";
         }
 
-        // C. Adiciona o clique de forma segura (sem acumular erro)
-        check.onclick = () => toggleCheck(check, index);
+        // D. Adiciona o clique da forma mais segura possível
+        check.onclick = function() {
+            toggleCheck(check, index);
+        };
     });
 }
 
