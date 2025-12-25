@@ -140,57 +140,89 @@ function updateXP(amount) {
     renderUI();
 }
 
-// --- SISTEMA DE CONQUISTAS ---
+// --- SISTEMA DE CONQUISTAS ATUALIZADO ---
 
 function checkAchievements(lastIndex) {
-    // 1. Primeiro Passo (Qualquer check)
+    // Garante que a lista de desbloqueados existe
+    if (!gameState.unlockedAchievements) {
+        gameState.unlockedAchievements = [];
+    }
+
+    // 1. Conquista: Primeiro Passo (Qualquer clique)
     unlockAchievement('first_step');
 
-    // 2. Dedicado (10 checks totais)
-    if (Object.keys(gameState.checked).length >= 10) unlockAchievement('dedicated');
+    // 2. Conquista: Dedicado (10 checks totais)
+    // Conta quantos 'true' existem no objeto checked
+    const totalChecks = Object.keys(gameState.checked).length;
+    if (totalChecks >= 10) unlockAchievement('dedicated');
 
-    // 3. Específicas por Linha (Baseado no index: 0-6=Treino, 7-13=Dieta, etc)
-    if (lastIndex >= 0 && lastIndex <= 6) unlockAchievement('gym_rat');   // Treino
-    if (lastIndex >= 14 && lastIndex <= 20) unlockAchievement('bookworm'); // Leitura
-    if (lastIndex >= 21 && lastIndex <= 27) unlockAchievement('early_bird'); // Acordar
-    if (lastIndex >= 28 && lastIndex <= 34) unlockAchievement('hydrated'); // Água
+    // 3. Conquistas por Linha (Baseado no índice clicado)
+    // Linha 1 (Índices 0 a 6) -> Treino
+    if (lastIndex >= 0 && lastIndex <= 6) unlockAchievement('gym_rat');
+    
+    // Linha 2 (Índices 7 a 13) -> Dieta
+    if (lastIndex >= 7 && lastIndex <= 13) unlockAchievement('dieta_focada'); // Verifique se o ID bate com sua lista
+
+    // ... Adicione as outras linhas conforme sua lista
 }
 
 function unlockAchievement(id) {
-    if (gameState.unlockedAchievements.includes(id)) return; // Já tem
+    // Se já tem essa conquista, para aqui (não mostra de novo)
+    if (gameState.unlockedAchievements.includes(id)) return;
 
+    // Procura os dados da conquista na lista
     const achievement = achievementsList.find(a => a.id === id);
-    if (!achievement) return;
-
-    // Desbloqueia
-    gameState.unlockedAchievements.push(id);
-    showToast(achievement.icon, 'Conquista Desbloqueada!', achievement.title);
     
-    // Se a tela de conquistas estiver aberta, atualiza ela
-    if (achievementsScreen.classList.contains('active')) renderAchievements();
+    // Se achou, desbloqueia e mostra
+    if (achievement) {
+        gameState.unlockedAchievements.push(id);
+        saveGameData(); // Salva imediatamente para não perder
+        
+        // Toca um som (Opcional - Browser pode bloquear se não houver interação antes)
+        // const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+        // audio.play().catch(e => console.log("Som bloqueado pelo navegador"));
+
+        showToast(achievement.icon, 'Conquista Desbloqueada!', achievement.title);
+        
+        // Se a tela de troféus estiver aberta, redesenha ela
+        if (achievementsScreen.classList.contains('active')) {
+            renderAchievements();
+        }
+    }
 }
 
 function showToast(icon, title, msg) {
+    const container = document.getElementById('toast-container');
+    
+    // Segurança: Se não achar o container, cria um na hora
+    if (!container) {
+        console.error("ERRO: <div id='toast-container'> não encontrado no HTML!");
+        return;
+    }
+
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.innerHTML = `<i class="ph ${icon}"></i><div class="toast-content"><h4>${title}</h4><p>${msg}</p></div>`;
-    toastContainer.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000); // Some depois de 4s
-}
+    toast.innerHTML = `
+        <i class="ph ${icon}" style="font-size: 24px; color: gold;"></i>
+        <div class="toast-content">
+            <h4 style="margin:0; font-size: 14px;">${title}</h4>
+            <p style="margin:0; font-size: 12px; color: #ccc;">${msg}</p>
+        </div>
+    `;
 
-function renderAchievements() {
-    achievementsListEl.innerHTML = '';
-    achievementsList.forEach(ach => {
-        const isUnlocked = gameState.unlockedAchievements.includes(ach.id);
-        const card = document.createElement('div');
-        card.className = `achievement-card ${isUnlocked ? 'unlocked' : ''}`;
-        card.innerHTML = `
-            <i class="ph ${ach.icon}"></i>
-            <h4>${ach.title}</h4>
-            <p>${ach.desc}</p>
-        `;
-        achievementsListEl.appendChild(card);
+    container.appendChild(toast);
+
+    // Animação de entrada
+    requestAnimationFrame(() => {
+        toast.style.transform = "translateX(0)";
+        toast.style.opacity = "1";
     });
+
+    // Remove depois de 4 segundos
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 500);
+    }, 4000);
 }
 
 // --- EVENTOS DO MENU (CORRIGIDO) ---
